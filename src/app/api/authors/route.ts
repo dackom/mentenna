@@ -2,13 +2,19 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { authorSchema } from "@/lib/validations/author";
 import { v4 as uuidv4 } from "uuid";
+import { getGenre1ById, getGenre2ById } from "@/lib/db/genres";
 
 // GET /api/authors - List all authors
 export async function GET() {
   try {
     const authors = await prisma.author.findMany({
       include: {
-        writingGenres: true,
+        writingGenres: {
+          include: {
+            genre1: true,
+            genre2: true,
+          },
+        },
       },
       orderBy: {
         createdAt: "desc",
@@ -33,19 +39,43 @@ export async function POST(request: Request) {
 
     const { writingGenres, ...authorData } = validatedData;
 
+    // Populate legacy genre fields by looking up names from IDs
+    const genresWithNames = await Promise.all(
+      (writingGenres || []).map(async (genre) => {
+        let genre_1_name = genre.genre_1 || null;
+        let genre_2_name = genre.genre_2 || null;
+
+        // If genre1Id is provided but genre_1 isn't, look up the name
+        if (genre.genre1Id && !genre_1_name) {
+          const genre1 = await getGenre1ById(genre.genre1Id);
+          genre_1_name = genre1?.name || null;
+        }
+
+        // If genre2Id is provided but genre_2 isn't, look up the name
+        if (genre.genre2Id && !genre_2_name) {
+          const genre2 = await getGenre2ById(genre.genre2Id);
+          genre_2_name = genre2?.name || null;
+        }
+
+        return {
+          id: uuidv4(),
+          writes: genre.writes || null,
+          genre1Id: genre.genre1Id || null,
+          genre2Id: genre.genre2Id || null,
+          genre_3: genre.genre_3 || null,
+          // Legacy fields for backwards compatibility
+          genre_1: genre_1_name,
+          genre_2: genre_2_name,
+        };
+      })
+    );
+
     const author = await prisma.author.create({
       data: {
         id: uuidv4(),
         ...authorData,
         writingGenres: {
-          create:
-            writingGenres?.map((genre) => ({
-              id: uuidv4(),
-              writes: genre.writes || null,
-              genre_1: genre.genre_1 || null,
-              genre_2: genre.genre_2 || null,
-              genre_3: genre.genre_3 || null,
-            })) || [],
+          create: genresWithNames,
         },
       },
       include: {

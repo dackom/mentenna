@@ -12,7 +12,12 @@ export default async function EditAuthorPage({ params }: EditAuthorPageProps) {
   const author = await prisma.author.findUnique({
     where: { id },
     include: {
-      writingGenres: true,
+      writingGenres: {
+        include: {
+          genre1: true,
+          genre2: true,
+        },
+      },
     },
   });
 
@@ -26,9 +31,14 @@ export default async function EditAuthorPage({ params }: EditAuthorPageProps) {
     writingGenres: author.writingGenres.map((wg) => ({
       id: wg.id,
       writes: wg.writes as "Non-fiction" | "Fiction" | "Speculative" | null,
+      genre1Id: wg.genre1Id,
+      genre2Id: wg.genre2Id,
       genre_1: wg.genre_1,
       genre_2: wg.genre_2,
       genre_3: wg.genre_3,
+      // Include the relations so the form can display names
+      genre1: wg.genre1,
+      genre2: wg.genre2,
     })),
   };
 

@@ -1,10 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-  getWritesOptions,
-  getGenre1Options,
-  getGenre2Options,
-  getGenre3Options,
-} from "@/lib/parse-genres";
+import { getGenre1ByWrites, getGenre2ByGenre1 } from "@/lib/db/genres";
 import { getWritingStyleOptions } from "@/lib/parse-writing-styles";
 import { getPersonalityOptions } from "@/lib/parse-personalities";
 
@@ -14,24 +9,49 @@ export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const level = searchParams.get("level");
   const writes = searchParams.get("writes");
-  const genre1 = searchParams.get("genre_1");
-  const genre2 = searchParams.get("genre_2");
+  const genre1Id = searchParams.get("genre1Id");
 
   try {
-    let options: string[] = [];
+    let options: Array<{ id: string; name: string }> | string[] = [];
 
     switch (level) {
       case "writes":
-        options = getWritesOptions();
+        // Hardcoded writes options
+        options = [
+          { id: "Fiction", name: "Fiction" },
+          { id: "Non-fiction", name: "Non-fiction" },
+          { id: "Speculative", name: "Speculative" },
+        ];
         break;
       case "genre_1":
-        options = getGenre1Options(writes);
+        if (!writes) {
+          return NextResponse.json(
+            { error: "writes parameter is required for genre_1" },
+            { status: 400 }
+          );
+        }
+        const genre1List = await getGenre1ByWrites(writes);
+        options = genre1List.map((g: { id: string; name: string }) => ({
+          id: g.id,
+          name: g.name,
+        }));
         break;
       case "genre_2":
-        options = getGenre2Options(writes, genre1);
+        if (!genre1Id) {
+          return NextResponse.json(
+            { error: "genre1Id parameter is required for genre_2" },
+            { status: 400 }
+          );
+        }
+        const genre2List = await getGenre2ByGenre1(genre1Id);
+        options = genre2List.map((g: { id: string; name: string }) => ({
+          id: g.id,
+          name: g.name,
+        }));
         break;
       case "genre_3":
-        options = getGenre3Options(writes, genre1, genre2);
+        // genre_3 is free text, return empty array
+        options = [];
         break;
       case "writing_styles":
         options = getWritingStyleOptions();

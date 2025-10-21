@@ -5,9 +5,12 @@ const writesOptions = ["Non-fiction", "Fiction", "Speculative"] as const;
 export const genreSchema = z.object({
   id: z.string().optional(),
   writes: z.enum(writesOptions).optional().nullable().or(z.literal("")),
+  genre1Id: z.string().uuid().optional().nullable().or(z.literal("")),
+  genre2Id: z.string().uuid().optional().nullable().or(z.literal("")),
+  genre_3: z.string().optional().nullable().or(z.literal("")),
+  // Legacy fields - keep for backwards compatibility during migration
   genre_1: z.string().optional().nullable().or(z.literal("")),
   genre_2: z.string().optional().nullable().or(z.literal("")),
-  genre_3: z.string().optional().nullable().or(z.literal("")),
 });
 
 export const authorSchema = z.object({

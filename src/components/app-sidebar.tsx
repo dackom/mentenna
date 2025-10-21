@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Image from "next/image";
-import { BookOpen, User } from "lucide-react";
+import { BookOpen, User, Tags } from "lucide-react";
 
 import { NavMain } from "@/components/nav-main";
 import { NavUser } from "@/components/nav-user";
@@ -26,6 +26,11 @@ const data = {
       title: "Books",
       url: "/admin/books",
       icon: BookOpen,
+    },
+    {
+      title: "Genres",
+      url: "/admin/genres",
+      icon: Tags,
     },
     // {
     //   title: "Settings",

@@ -22,6 +22,7 @@ import { useEffect, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { Textarea } from "@/components/ui/textarea";
+import { GenreManagementDialog } from "@/components/genre-management-dialog";
 
 interface AuthorFormProps {
   defaultValues?: Partial<AuthorFormData>;
@@ -63,7 +64,15 @@ export function AuthorForm({
 
   // State for dynamic genre rows
   const [genreRows, setGenreRows] = useState<GenreFormData[]>([
-    { id: uuidv4(), writes: "", genre_1: "", genre_2: "", genre_3: "" },
+    {
+      id: uuidv4(),
+      writes: "",
+      genre1Id: "",
+      genre2Id: "",
+      genre_3: "",
+      genre_1: "",
+      genre_2: "",
+    },
   ]);
 
   // State for writing styles
@@ -82,10 +91,10 @@ export function AuthorForm({
 
   // State for genre options per row
   const [rowGenre1Options, setRowGenre1Options] = useState<
-    Record<number, string[]>
+    Record<number, Array<{ id: string; name: string }>>
   >({});
   const [rowGenre2Options, setRowGenre2Options] = useState<
-    Record<number, string[]>
+    Record<number, Array<{ id: string; name: string }>>
   >({});
   const [rowLoadingStates, setRowLoadingStates] = useState<
     Record<number, { genre1: boolean; genre2: boolean }>
@@ -97,7 +106,14 @@ export function AuthorForm({
       defaultValues?.writingGenres &&
       defaultValues.writingGenres.length > 0
     ) {
-      setGenreRows(defaultValues.writingGenres);
+      // Map the genres and ensure IDs are properly extracted from relations
+      const mappedGenres = defaultValues.writingGenres.map((genre) => ({
+        ...genre,
+        // Extract IDs from genre relations if they exist
+        genre1Id: genre.genre1Id || (genre as any).genre1?.id || "",
+        genre2Id: genre.genre2Id || (genre as any).genre2?.id || "",
+      }));
+      setGenreRows(mappedGenres);
     }
   }, [defaultValues?.writingGenres]);
 
@@ -133,8 +149,10 @@ export function AuthorForm({
       initGenres.forEach((genre, index) => {
         if (genre.writes) {
           fetchGenre1Options(index, genre.writes);
-          if (genre.genre_1) {
-            fetchGenre2Options(index, genre.writes, genre.genre_1);
+          // Extract genre1Id from either the direct field or the relation
+          const genre1Id = genre.genre1Id || (genre as any).genre1?.id;
+          if (genre1Id) {
+            fetchGenre2Options(index, genre1Id);
           }
         }
       });
@@ -164,18 +182,12 @@ export function AuthorForm({
       });
   };
 
-  const fetchGenre2Options = (
-    rowIndex: number,
-    writes: string,
-    genre1: string
-  ) => {
+  const fetchGenre2Options = (rowIndex: number, genre1Id: string) => {
     setRowLoadingStates((prev) => ({
       ...prev,
       [rowIndex]: { ...prev[rowIndex], genre2: true },
     }));
-    fetch(
-      `/api/genres?level=genre_2&writes=${encodeURIComponent(writes)}&genre_1=${encodeURIComponent(genre1)}`
-    )
+    fetch(`/api/genres?level=genre_2&genre1Id=${encodeURIComponent(genre1Id)}`)
       .then((res) => res.json())
       .then((data) => {
         setRowGenre2Options((prev) => ({
@@ -196,7 +208,15 @@ export function AuthorForm({
   const addGenreRow = () => {
     setGenreRows([
       ...genreRows,
-      { id: uuidv4(), writes: "", genre_1: "", genre_2: "", genre_3: "" },
+      {
+        id: uuidv4(),
+        writes: "",
+        genre1Id: "",
+        genre2Id: "",
+        genre_3: "",
+        genre_1: "",
+        genre_2: "",
+      },
     ]);
   };
 
@@ -224,20 +244,23 @@ export function AuthorForm({
 
     // Handle cascading resets
     if (field === "writes") {
+      updated[index].genre1Id = "";
+      updated[index].genre2Id = "";
+      updated[index].genre_3 = "";
       updated[index].genre_1 = "";
       updated[index].genre_2 = "";
-      updated[index].genre_3 = "";
       setRowGenre2Options((prev) => ({ ...prev, [index]: [] }));
       if (value) {
         fetchGenre1Options(index, value);
       }
-    } else if (field === "genre_1") {
-      updated[index].genre_2 = "";
+    } else if (field === "genre1Id") {
+      updated[index].genre2Id = "";
       updated[index].genre_3 = "";
-      if (value && updated[index].writes) {
-        fetchGenre2Options(index, updated[index].writes!, value);
+      updated[index].genre_2 = "";
+      if (value) {
+        fetchGenre2Options(index, value);
       }
-    } else if (field === "genre_2") {
+    } else if (field === "genre2Id") {
       updated[index].genre_3 = "";
     }
 
@@ -249,7 +272,7 @@ export function AuthorForm({
   ) => {
     // Include genre rows in submission
     const filteredGenres = genreRows.filter(
-      (row) => row.writes || row.genre_1 || row.genre_2 || row.genre_3
+      (row) => row.writes || row.genre1Id || row.genre2Id || row.genre_3
     );
 
     const submissionData: AuthorFormData = {
@@ -389,9 +412,24 @@ export function AuthorForm({
           />
         </div>
 
-        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mt-12">
-          Writing Genres
-        </h3>
+        <div className="flex justify-between items-center mt-12 mb-4">
+          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+            Writing Genres
+          </h3>
+          <GenreManagementDialog
+            onGenresUpdated={() => {
+              // Refresh genre options for all rows
+              genreRows.forEach((row, index) => {
+                if (row.writes) {
+                  fetchGenre1Options(index, row.writes);
+                  if (row.genre1Id) {
+                    fetchGenre2Options(index, row.genre1Id);
+                  }
+                }
+              });
+            }}
+          />
+        </div>
 
         <div className="space-y-4">
           {genreRows.map((row, index) => (
@@ -423,9 +461,9 @@ export function AuthorForm({
                 <div className="space-y-2">
                   <Label htmlFor={`genre_1-${index}`}>Primary genre</Label>
                   <Select
-                    value={row.genre_1 || ""}
+                    value={row.genre1Id || ""}
                     onValueChange={(value) =>
-                      updateGenreRow(index, "genre_1", value)
+                      updateGenreRow(index, "genre1Id", value)
                     }
                     disabled={!row.writes}
                   >
@@ -449,8 +487,8 @@ export function AuthorForm({
                         </div>
                       ) : (
                         (rowGenre1Options[index] || []).map((option) => (
-                          <SelectItem key={option} value={option}>
-                            {option}
+                          <SelectItem key={option.id} value={option.id}>
+                            {option.name}
                           </SelectItem>
                         ))
                       )}
@@ -461,16 +499,16 @@ export function AuthorForm({
                 <div className="space-y-2">
                   <Label htmlFor={`genre_2-${index}`}>Secondary genre</Label>
                   <Select
-                    value={row.genre_2 || ""}
+                    value={row.genre2Id || ""}
                     onValueChange={(value) =>
-                      updateGenreRow(index, "genre_2", value)
+                      updateGenreRow(index, "genre2Id", value)
                     }
-                    disabled={!row.genre_1}
+                    disabled={!row.genre1Id}
                   >
                     <SelectTrigger id={`genre_2-${index}`} className="w-full">
                       <SelectValue
                         placeholder={
-                          !row.genre_1
+                          !row.genre1Id
                             ? "Select Genre 1"
                             : rowLoadingStates[index]?.genre2
                               ? "Loading..."
@@ -487,8 +525,8 @@ export function AuthorForm({
                         </div>
                       ) : (
                         (rowGenre2Options[index] || []).map((option) => (
-                          <SelectItem key={option} value={option}>
-                            {option}
+                          <SelectItem key={option.id} value={option.id}>
+                            {option.name}
                           </SelectItem>
                         ))
                       )}

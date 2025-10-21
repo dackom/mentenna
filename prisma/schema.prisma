@@ -97,11 +97,47 @@ model AuthorWritingGenre {
   id        String   @id @default(uuid())
   authorId  String
   author    Author   @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  writes    String?
-  genre_1   String?
-  genre_2   String?
-  genre_3   String?
+  writes    String?  // Keep temporarily for migration
+  genre1Id  String?
+  genre1    Genre1?  @relation(fields: [genre1Id], references: [id], onDelete: SetNull)
+  genre2Id  String?
+  genre2    Genre2?  @relation(fields: [genre2Id], references: [id], onDelete: SetNull)
+  genre_1   String?  // DEPRECATED - keep temporarily for migration
+  genre_2   String?  // DEPRECATED - keep temporarily for migration
+  genre_3   String?  // Free text - remains as is
   createdAt DateTime @default(now())
 
   @@map("author_writing_genres")
+}
+
+model Genre1 {
+  id        String   @id @default(uuid())
+  name      String
+  writes    String   // "Fiction", "Non-fiction", or "Speculative"
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  genre2Options Genre2[]
+  writingGenres AuthorWritingGenre[]
+
+  @@unique([writes, name])
+  @@map("genre_1")
+  @@index([writes])
+}
+
+model Genre2 {
+  id        String   @id @default(uuid())
+  name      String
+  genre1Id  String
+  genre1    Genre1   @relation(fields: [genre1Id], references: [id], onDelete: Cascade)
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  writingGenres AuthorWritingGenre[]
+
+  @@unique([genre1Id, name])
+  @@map("genre_2")
+  @@index([genre1Id])
 }

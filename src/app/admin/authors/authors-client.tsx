@@ -33,9 +33,12 @@ type Author = {
   writingGenres?: Array<{
     id: string;
     writes?: "Non-fiction" | "Fiction" | "Speculative" | null;
+    genre1?: { id: string; name: string } | null;
+    genre2?: { id: string; name: string } | null;
+    genre_3?: string | null;
+    // Legacy fields for backwards compatibility
     genre_1?: string | null;
     genre_2?: string | null;
-    genre_3?: string | null;
   }>;
   createdAt: Date;
 };
@@ -169,18 +172,39 @@ export function AuthorsClient({ initialAuthors }: AuthorsClientProps) {
                       </TableCell>
                       <TableCell>
                         {author.writingGenres &&
-                        author.writingGenres.length > 0 &&
-                        author.writingGenres[0].genre_1 ? (
-                          <div className="flex gap-1 flex-wrap items-center">
-                            <Badge variant="outline">
-                              {author.writingGenres[0].genre_1}
-                            </Badge>
-                            {author.writingGenres[0].genre_2 && (
-                              <Badge variant="outline" className="text-xs">
-                                {author.writingGenres[0].genre_2}
-                              </Badge>
-                            )}
-                          </div>
+                        author.writingGenres.length > 0 ? (
+                          (() => {
+                            const firstGenre = author.writingGenres[0];
+                            // Use new genre relations or fall back to legacy string fields
+                            const genre1Name =
+                              firstGenre.genre1?.name || firstGenre.genre_1;
+                            const genre2Name =
+                              firstGenre.genre2?.name || firstGenre.genre_2;
+
+                            if (!genre1Name) {
+                              return (
+                                <span className="text-muted-foreground">—</span>
+                              );
+                            }
+
+                            return (
+                              <div className="flex gap-1 flex-wrap items-center">
+                                <Badge variant="outline" className="text-xs">
+                                  {genre1Name}
+                                </Badge>
+                                {genre2Name && (
+                                  <Badge variant="outline" className="text-xs">
+                                    {genre2Name}
+                                  </Badge>
+                                )}
+                                {author.writingGenres.length > 1 && (
+                                  <span className="text-xs text-muted-foreground">
+                                    +{author.writingGenres.length - 1}
+                                  </span>
+                                )}
+                              </div>
+                            );
+                          })()
                         ) : (
                           <span className="text-muted-foreground">—</span>
                         )}
