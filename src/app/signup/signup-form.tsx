@@ -28,23 +28,17 @@ export function SignupForm({
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [isInvited, setIsInvited] = useState(false);
-  const [projectId, setProjectId] = useState<string | null>(null);
   const [isEmailPrefilled, setIsEmailPrefilled] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
 
   useEffect(() => {
     const emailParam = searchParams.get("email");
-    const projectParam = searchParams.get("project");
 
     if (emailParam) {
       setEmail(emailParam);
       setIsEmailPrefilled(true);
       setIsInvited(true);
-    }
-
-    if (projectParam) {
-      setProjectId(projectParam);
     }
   }, [searchParams]);
 

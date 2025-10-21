@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { GalleryVerticalEnd } from "lucide-react";
 import { SignupForm } from "./signup-form";
 
@@ -11,7 +12,9 @@ export default function SignupPage() {
           </div>
           Acme Inc.
         </a>
-        <SignupForm />
+        <Suspense fallback={<div>Loading...</div>}>
+          <SignupForm />
+        </Suspense>
       </div>
     </div>
   );

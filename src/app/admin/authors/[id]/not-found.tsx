@@ -19,8 +19,8 @@ export default function AuthorNotFound() {
             <CardTitle>Author Not Found</CardTitle>
           </div>
           <CardDescription>
-            The author you're looking for doesn't exist or may have been
-            deleted.
+            The author you&apos;re looking for doesn&apos;t exist or may have
+            been deleted.
           </CardDescription>
         </CardHeader>
         <CardContent>

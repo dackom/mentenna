@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Image from "next/image";
 import { BookOpen, User } from "lucide-react";
 
 import { NavMain } from "@/components/nav-main";
@@ -64,7 +65,12 @@ export function AppSidebar({
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <img src="/mentenna-logo.svg" />
+        <Image
+          src="/mentenna-logo.svg"
+          alt="Mentenna Logo"
+          width={150}
+          height={40}
+        />
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />

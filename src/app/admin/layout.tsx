@@ -2,7 +2,7 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { auth } from "@/lib/auth";
 import { ModeToggle } from "@/components/theme-toggle";
-import AdminHeader, { AdminH1 } from "@/components/admin-header";
+import AdminHeader from "@/components/admin-header";
 export default async function AuthorizedLayout({
   children,
 }: {
