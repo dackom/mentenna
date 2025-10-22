@@ -72,15 +72,27 @@ async function seedWritingStyles() {
   for (let i = 0; i < writingStyles.length; i++) {
     const { name, description } = writingStyles[i];
 
-    await prisma.writingStyle.upsert({
+    // Find existing writing style by name
+    const existing = await prisma.writingStyle.findFirst({
       where: { name },
-      update: { description, order: i },
-      create: {
-        name,
-        description,
-        order: i,
-      },
     });
+
+    if (existing) {
+      // Update existing
+      await prisma.writingStyle.update({
+        where: { id: existing.id },
+        data: { description, order: i },
+      });
+    } else {
+      // Create new
+      await prisma.writingStyle.create({
+        data: {
+          name,
+          description,
+          order: i,
+        },
+      });
+    }
 
     count++;
     console.log(`  ✓ ${name}`);

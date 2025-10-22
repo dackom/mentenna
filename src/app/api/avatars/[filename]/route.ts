@@ -34,8 +34,8 @@ export async function GET(
       contentType = "image/webp";
     }
 
-    // Return the image
-    return new NextResponse(imageBuffer, {
+    // Return the image - convert Buffer to Uint8Array for NextResponse
+    return new NextResponse(new Uint8Array(imageBuffer), {
       headers: {
         "Content-Type": contentType,
         "Cache-Control": "public, max-age=31536000, immutable",
