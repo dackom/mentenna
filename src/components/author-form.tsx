@@ -23,6 +23,8 @@ import { v4 as uuidv4 } from "uuid";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { Textarea } from "@/components/ui/textarea";
 import { GenreManagementDialog } from "@/components/genre-management-dialog";
+import useSWR from "swr";
+import { fetcher } from "@/lib/fetcher";
 
 interface AuthorFormProps {
   defaultValues?: Partial<AuthorFormData>;
@@ -48,9 +50,9 @@ export function AuthorForm({
       age: defaultValues?.age || "",
       location: defaultValues?.location || "",
       living: defaultValues?.living || "",
-      personality: defaultValues?.personality || "",
-      writing_style_1: defaultValues?.writing_style_1 || "",
-      writing_style_2: defaultValues?.writing_style_2 || "",
+      personalityIds: defaultValues?.personalityIds || [],
+      writingStyle1Id: defaultValues?.writingStyle1Id || "",
+      writingStyle2Id: defaultValues?.writingStyle2Id || "",
       ai_persona: defaultValues?.ai_persona || "",
       writingGenres: defaultValues?.writingGenres || [],
     },
@@ -75,19 +77,41 @@ export function AuthorForm({
     },
   ]);
 
-  // State for writing styles
-  const [writingStyleOptions, setWritingStyleOptions] = useState<string[]>([]);
-  const [loadingWritingStyles, setLoadingWritingStyles] = useState(false);
-
-  // State for personalities
-  const [personalityOptions, setPersonalityOptions] = useState<string[]>([]);
-  const [loadingPersonalities, setLoadingPersonalities] = useState(false);
   const [selectedPersonalities, setSelectedPersonalities] = useState<string[]>(
     []
   );
 
+  // Fetch writing styles using SWR
+  const { data: writingStylesData, isLoading: loadingWritingStyles } = useSWR<{
+    options: Array<{ id: string; name: string }>;
+  }>("/api/genres?level=writing_styles", fetcher);
+
+  const writingStyleOptions = writingStylesData?.options || [];
+
+  // Fetch personalities using SWR
+  const { data: personalitiesData, isLoading: loadingPersonalities } = useSWR<{
+    options: Array<{ id: string; name: string }>;
+  }>("/api/genres?level=personalities", fetcher);
+
+  const personalityOptions = personalitiesData?.options || [];
+
   // State for AI persona generation
   const [generatingPersona, setGeneratingPersona] = useState(false);
+  const [lastGenerationCost, setLastGenerationCost] = useState<{
+    prompt_tokens?: number;
+    completion_tokens?: number;
+    total_tokens?: number;
+  } | null>(null);
+
+  // Calculate cost in USD based on token usage
+  // Pricing for gpt-3.5-turbo-16k: $3/M input tokens, $4/M output tokens
+  const calculateCost = (usage: typeof lastGenerationCost): number | null => {
+    if (!usage?.prompt_tokens || !usage?.completion_tokens) return null;
+
+    const inputCost = (usage.prompt_tokens / 1_000_000) * 3.0;
+    const outputCost = (usage.completion_tokens / 1_000_000) * 4.0;
+    return inputCost + outputCost;
+  };
 
   // State for genre options per row
   const [rowGenre1Options, setRowGenre1Options] = useState<
@@ -119,31 +143,62 @@ export function AuthorForm({
 
   // Sync personalities when defaultValues change (for editing)
   useEffect(() => {
-    if (defaultValues?.personality) {
-      const personalities = defaultValues.personality
-        .split(";")
-        .filter((p) => p.trim());
-      setSelectedPersonalities(personalities);
+    if (defaultValues?.personalityIds) {
+      setSelectedPersonalities(defaultValues.personalityIds);
+    } else {
+      setSelectedPersonalities([]);
     }
-  }, [defaultValues?.personality]);
+  }, [defaultValues]);
 
-  // Load writing styles and personalities on mount
+  // Helper functions to fetch genre options for a specific row
+  const fetchGenre1Options = async (rowIndex: number, writes: string) => {
+    setRowLoadingStates((prev) => ({
+      ...prev,
+      [rowIndex]: { ...prev[rowIndex], genre1: true },
+    }));
+    try {
+      const data = await fetcher(
+        `/api/genres?level=genre_1&writes=${encodeURIComponent(writes)}`
+      );
+      setRowGenre1Options((prev) => ({
+        ...prev,
+        [rowIndex]: data.options || [],
+      }));
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setRowLoadingStates((prev) => ({
+        ...prev,
+        [rowIndex]: { ...prev[rowIndex], genre1: false },
+      }));
+    }
+  };
+
+  const fetchGenre2Options = async (rowIndex: number, genre1Id: string) => {
+    setRowLoadingStates((prev) => ({
+      ...prev,
+      [rowIndex]: { ...prev[rowIndex], genre2: true },
+    }));
+    try {
+      const data = await fetcher(
+        `/api/genres?level=genre_2&genre1Id=${encodeURIComponent(genre1Id)}`
+      );
+      setRowGenre2Options((prev) => ({
+        ...prev,
+        [rowIndex]: data.options || [],
+      }));
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setRowLoadingStates((prev) => ({
+        ...prev,
+        [rowIndex]: { ...prev[rowIndex], genre2: false },
+      }));
+    }
+  };
+
+  // Initialize genre options for existing rows on mount
   useEffect(() => {
-    setLoadingWritingStyles(true);
-    fetch("/api/genres?level=writing_styles")
-      .then((res) => res.json())
-      .then((data) => setWritingStyleOptions(data.options || []))
-      .catch(console.error)
-      .finally(() => setLoadingWritingStyles(false));
-
-    setLoadingPersonalities(true);
-    fetch("/api/genres?level=personalities")
-      .then((res) => res.json())
-      .then((data) => setPersonalityOptions(data.options || []))
-      .catch(console.error)
-      .finally(() => setLoadingPersonalities(false));
-
-    // Initialize genre options for existing rows
     const initGenres = defaultValues?.writingGenres;
     if (initGenres) {
       initGenres.forEach((genre, index) => {
@@ -157,52 +212,8 @@ export function AuthorForm({
         }
       });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [defaultValues?.writingGenres]);
-
-  // Helper functions to fetch genre options for a specific row
-  const fetchGenre1Options = (rowIndex: number, writes: string) => {
-    setRowLoadingStates((prev) => ({
-      ...prev,
-      [rowIndex]: { ...prev[rowIndex], genre1: true },
-    }));
-    fetch(`/api/genres?level=genre_1&writes=${encodeURIComponent(writes)}`)
-      .then((res) => res.json())
-      .then((data) => {
-        setRowGenre1Options((prev) => ({
-          ...prev,
-          [rowIndex]: data.options || [],
-        }));
-      })
-      .catch(console.error)
-      .finally(() => {
-        setRowLoadingStates((prev) => ({
-          ...prev,
-          [rowIndex]: { ...prev[rowIndex], genre1: false },
-        }));
-      });
-  };
-
-  const fetchGenre2Options = (rowIndex: number, genre1Id: string) => {
-    setRowLoadingStates((prev) => ({
-      ...prev,
-      [rowIndex]: { ...prev[rowIndex], genre2: true },
-    }));
-    fetch(`/api/genres?level=genre_2&genre1Id=${encodeURIComponent(genre1Id)}`)
-      .then((res) => res.json())
-      .then((data) => {
-        setRowGenre2Options((prev) => ({
-          ...prev,
-          [rowIndex]: data.options || [],
-        }));
-      })
-      .catch(console.error)
-      .finally(() => {
-        setRowLoadingStates((prev) => ({
-          ...prev,
-          [rowIndex]: { ...prev[rowIndex], genre2: false },
-        }));
-      });
-  };
 
   // Functions to manage genre rows
   const addGenreRow = () => {
@@ -268,7 +279,7 @@ export function AuthorForm({
   };
 
   const handleFormSubmit = async (
-    data: Omit<AuthorFormData, "writingGenres">
+    data: Omit<AuthorFormData, "writingGenres" | "personalityIds">
   ) => {
     // Include genre rows in submission
     const filteredGenres = genreRows.filter(
@@ -277,7 +288,7 @@ export function AuthorForm({
 
     const submissionData: AuthorFormData = {
       ...data,
-      personality: selectedPersonalities.join(";"),
+      personalityIds: selectedPersonalities,
       writingGenres: filteredGenres,
     };
     await onSubmit(submissionData);
@@ -302,9 +313,9 @@ export function AuthorForm({
           location: formValues.location,
           field: formValues.field,
           writingGenres: genreRows,
-          personality: selectedPersonalities.join(";"),
-          writing_style_1: formValues.writing_style_1,
-          writing_style_2: formValues.writing_style_2,
+          personalityIds: selectedPersonalities,
+          writingStyle1Id: formValues.writingStyle1Id,
+          writingStyle2Id: formValues.writingStyle2Id,
         }),
       });
 
@@ -316,6 +327,11 @@ export function AuthorForm({
 
       // Set the generated persona in the form
       form.setValue("ai_persona", data.persona);
+
+      // Store usage information if available
+      if (data.usage) {
+        setLastGenerationCost(data.usage);
+      }
     } catch (error) {
       console.error("Error generating persona:", error);
       alert("Failed to generate AI persona. Please try again.");
@@ -599,13 +615,13 @@ export function AuthorForm({
 
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="writing_style_1">Writing Style 1</Label>
+            <Label htmlFor="writingStyle1Id">Writing Style 1</Label>
             <Select
-              value={form.watch("writing_style_1") || ""}
-              onValueChange={(value) => form.setValue("writing_style_1", value)}
+              value={form.watch("writingStyle1Id") || ""}
+              onValueChange={(value) => form.setValue("writingStyle1Id", value)}
               disabled={loadingWritingStyles}
             >
-              <SelectTrigger id="writing_style_1" className="w-full">
+              <SelectTrigger id="writingStyle1Id" className="w-full">
                 <SelectValue
                   placeholder={
                     loadingWritingStyles
@@ -623,8 +639,8 @@ export function AuthorForm({
                   </div>
                 ) : (
                   writingStyleOptions.map((option) => (
-                    <SelectItem key={option} value={option}>
-                      {option}
+                    <SelectItem key={option.id} value={option.id}>
+                      {option.name}
                     </SelectItem>
                   ))
                 )}
@@ -633,13 +649,13 @@ export function AuthorForm({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="writing_style_2">Writing Style 2</Label>
+            <Label htmlFor="writingStyle2Id">Writing Style 2</Label>
             <Select
-              value={form.watch("writing_style_2") || ""}
-              onValueChange={(value) => form.setValue("writing_style_2", value)}
+              value={form.watch("writingStyle2Id") || ""}
+              onValueChange={(value) => form.setValue("writingStyle2Id", value)}
               disabled={loadingWritingStyles}
             >
-              <SelectTrigger id="writing_style_2" className="w-full">
+              <SelectTrigger id="writingStyle2Id" className="w-full">
                 <SelectValue
                   placeholder={
                     loadingWritingStyles
@@ -657,8 +673,8 @@ export function AuthorForm({
                   </div>
                 ) : (
                   writingStyleOptions.map((option) => (
-                    <SelectItem key={option} value={option}>
-                      {option}
+                    <SelectItem key={option.id} value={option.id}>
+                      {option.name}
                     </SelectItem>
                   ))
                 )}
@@ -691,6 +707,26 @@ export function AuthorForm({
             placeholder="AI persona description"
             rows={6}
           />
+          {lastGenerationCost && (
+            <p className="text-xs text-muted-foreground">
+              Last generation: {lastGenerationCost.total_tokens || 0} tokens
+              {lastGenerationCost.prompt_tokens &&
+                lastGenerationCost.completion_tokens && (
+                  <>
+                    {" "}
+                    ({lastGenerationCost.prompt_tokens} prompt +{" "}
+                    {lastGenerationCost.completion_tokens} completion)
+                  </>
+                )}
+              {calculateCost(lastGenerationCost) !== null && (
+                <>
+                  <br />• Cost estimate: $
+                  {calculateCost(lastGenerationCost)!.toFixed(6)} (might be
+                  completely wrong, do not rely on this)
+                </>
+              )}
+            </p>
+          )}
           {errors.ai_persona && (
             <p className="text-sm text-destructive">
               {errors.ai_persona.message}

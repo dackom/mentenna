@@ -26,7 +26,6 @@ type Author = {
   age?: string | null;
   location?: string | null;
   living?: string | null;
-  personality?: string | null;
   writing_style_1?: string | null;
   writing_style_2?: string | null;
   ai_persona?: string | null;
@@ -39,6 +38,13 @@ type Author = {
     // Legacy fields for backwards compatibility
     genre_1?: string | null;
     genre_2?: string | null;
+  }>;
+  personalities?: Array<{
+    personalityId: string;
+    personality: {
+      id: string;
+      name: string;
+    };
   }>;
   createdAt: Date;
 };
@@ -123,31 +129,17 @@ export function AuthorsClient({ initialAuthors }: AuthorsClientProps) {
                         {author.name}
                       </TableCell>
                       <TableCell>
-                        {author.personality ? (
+                        {author.personalities &&
+                        author.personalities.length > 0 ? (
                           <div className="flex gap-1 flex-wrap items-center">
-                            {(() => {
-                              const personalities = author.personality
-                                .split(";")
-                                .filter((p) => p.trim());
-                              const firstPersonality = personalities[0]?.trim();
-                              const remainingCount = personalities.length - 1;
-
-                              return (
-                                <>
-                                  <Badge
-                                    variant="secondary"
-                                    className="text-xs"
-                                  >
-                                    {firstPersonality}
-                                  </Badge>
-                                  {remainingCount > 0 && (
-                                    <span className="text-xs text-muted-foreground">
-                                      +{remainingCount}
-                                    </span>
-                                  )}
-                                </>
-                              );
-                            })()}
+                            <Badge variant="secondary" className="text-xs">
+                              {author.personalities[0].personality.name}
+                            </Badge>
+                            {author.personalities.length > 1 && (
+                              <span className="text-xs text-muted-foreground">
+                                +{author.personalities.length - 1}
+                              </span>
+                            )}
                           </div>
                         ) : (
                           <span className="text-muted-foreground">—</span>

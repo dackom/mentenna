@@ -49,9 +49,3 @@ export default function AdminHeader() {
     </header>
   );
 }
-
-export function AdminH1() {
-  const pathName = usePathname();
-  const pageName = getPageName(pathName);
-  return <h1 className="text-2xl font-bold">{pageName}</h1>;
-}

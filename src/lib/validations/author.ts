@@ -21,9 +21,9 @@ export const authorSchema = z.object({
   age: z.string().optional().nullable().or(z.literal("")),
   location: z.string().optional().nullable().or(z.literal("")),
   living: z.string().optional().nullable().or(z.literal("")),
-  personality: z.string().optional().nullable().or(z.literal("")),
-  writing_style_1: z.string().optional().nullable().or(z.literal("")),
-  writing_style_2: z.string().optional().nullable().or(z.literal("")),
+  personalityIds: z.array(z.string().uuid()).optional().default([]),
+  writingStyle1Id: z.string().uuid().optional().nullable().or(z.literal("")),
+  writingStyle2Id: z.string().uuid().optional().nullable().or(z.literal("")),
   ai_persona: z.string().optional().nullable().or(z.literal("")),
   writingGenres: z.array(genreSchema).default([]),
 });

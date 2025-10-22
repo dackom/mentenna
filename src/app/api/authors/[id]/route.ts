@@ -21,6 +21,13 @@ export async function GET(
             genre2: true,
           },
         },
+        personalities: {
+          include: {
+            personality: true,
+          },
+        },
+        writingStyle1: true,
+        writingStyle2: true,
       },
     });
 
@@ -48,10 +55,14 @@ export async function PUT(
     const body = await request.json();
     const validatedData = authorUpdateSchema.parse(body);
 
-    const { writingGenres, ...authorData } = validatedData;
+    const { writingGenres, personalityIds, ...authorData } = validatedData;
 
-    // Delete existing genres and create new ones
+    // Delete existing genres and personalities
     await prisma.authorWritingGenre.deleteMany({
+      where: { authorId: id },
+    });
+
+    await prisma.authorPersonality.deleteMany({
       where: { authorId: id },
     });
 
@@ -93,9 +104,21 @@ export async function PUT(
         writingGenres: {
           create: genresWithNames,
         },
+        personalities: {
+          create: (personalityIds || []).map((personalityId) => ({
+            personalityId,
+          })),
+        },
       },
       include: {
         writingGenres: true,
+        personalities: {
+          include: {
+            personality: true,
+          },
+        },
+        writingStyle1: true,
+        writingStyle2: true,
       },
     });
 

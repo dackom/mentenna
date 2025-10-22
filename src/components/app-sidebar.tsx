@@ -2,10 +2,20 @@
 
 import * as React from "react";
 import Image from "next/image";
-import { BookOpen, User, Tags } from "lucide-react";
+import {
+  BookOpen,
+  Tags,
+  Brain,
+  PenTool,
+  UserPenIcon,
+  UsersRound,
+  DollarSign,
+} from "lucide-react";
 
 import { NavMain } from "@/components/nav-main";
+import { NavGlobal } from "@/components/nav-global";
 import { NavUser } from "@/components/nav-user";
+import { NavConfiguration } from "@/components/nav-configuration";
 import {
   Sidebar,
   SidebarContent,
@@ -20,41 +30,42 @@ const data = {
     {
       title: "Authors",
       url: "/admin/authors",
-      icon: User,
+      icon: UserPenIcon,
     },
     {
       title: "Books",
       url: "/admin/books",
       icon: BookOpen,
     },
+  ],
+  navConfiguration: [
     {
       title: "Genres",
       url: "/admin/genres",
       icon: Tags,
     },
-    // {
-    //   title: "Settings",
-    //   url: "#",
-    //   icon: Settings2,
-    //   items: [
-    //     {
-    //       title: "General",
-    //       url: "#",
-    //     },
-    //     {
-    //       title: "Team",
-    //       url: "#",
-    //     },
-    //     {
-    //       title: "Billing",
-    //       url: "#",
-    //     },
-    //     {
-    //       title: "Limits",
-    //       url: "#",
-    //     },
-    //   ],
-    // },
+    {
+      title: "Personalities",
+      url: "/admin/personalities",
+      icon: Brain,
+    },
+    {
+      title: "Writing Styles",
+      url: "/admin/writing-styles",
+      icon: PenTool,
+    },
+  ],
+  navGlobal: [
+    {
+      title: "Open Router Costs",
+      url: "/admin/open-router",
+      icon: DollarSign,
+    },
+    {
+      title: "Users",
+      url: "/admin/users",
+      icon: UsersRound,
+    },
   ],
 };
 
@@ -79,6 +90,8 @@ export function AppSidebar({
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
+        <NavConfiguration items={data.navConfiguration} />
+        <NavGlobal items={data.navGlobal} />
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={user} />

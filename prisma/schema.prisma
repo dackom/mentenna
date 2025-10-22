@@ -75,20 +75,22 @@ model Verification {
 }
 
 model Author {
-  id                String               @id
-  name              String
-  continent         String?
-  field             String?
-  pronouns          String?
-  age               String?
-  location          String?
-  living            String?
-  personality       String?
-  writing_style_1   String?
-  writing_style_2   String?
-  ai_persona        String?
-  createdAt         DateTime             @default(now())
-  writingGenres     AuthorWritingGenre[]
+  id                 String               @id
+  name               String
+  continent          String?
+  field              String?
+  pronouns           String?
+  age                String?
+  location           String?
+  living             String?
+  writingStyle1Id    String?
+  writingStyle1      WritingStyle?        @relation("AuthorWritingStyle1", fields: [writingStyle1Id], references: [id], onDelete: SetNull)
+  writingStyle2Id    String?
+  writingStyle2      WritingStyle?        @relation("AuthorWritingStyle2", fields: [writingStyle2Id], references: [id], onDelete: SetNull)
+  ai_persona         String?
+  createdAt          DateTime             @default(now())
+  writingGenres      AuthorWritingGenre[]
+  personalities      AuthorPersonality[]
 
   @@map("authors")
 }
@@ -140,4 +142,44 @@ model Genre2 {
   @@unique([genre1Id, name])
   @@map("genre_2")
   @@index([genre1Id])
+}
+
+model Personality {
+  id        String              @id @default(uuid())
+  name      String              @unique
+  order     Int                 @default(0)
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+  
+  authors   AuthorPersonality[]
+
+  @@map("personalities")
+}
+
+model AuthorPersonality {
+  id            String      @id @default(uuid())
+  authorId      String
+  author        Author      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  personalityId String
+  personality   Personality @relation(fields: [personalityId], references: [id], onDelete: Cascade)
+  createdAt     DateTime    @default(now())
+
+  @@unique([authorId, personalityId])
+  @@map("author_personalities")
+  @@index([authorId])
+  @@index([personalityId])
+}
+
+model WritingStyle {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String   @db.Text
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  authorsAsStyle1 Author[] @relation("AuthorWritingStyle1")
+  authorsAsStyle2 Author[] @relation("AuthorWritingStyle2")
+
+  @@map("writing_styles")
 }

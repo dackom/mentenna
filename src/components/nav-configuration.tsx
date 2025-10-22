@@ -20,7 +20,7 @@ import {
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
 
-export function NavMain({
+export function NavConfiguration({
   items,
 }: {
   items: {
@@ -37,7 +37,7 @@ export function NavMain({
   const pathname = usePathname();
   return (
     <SidebarGroup>
-      <SidebarGroupLabel>Library</SidebarGroupLabel>
+      <SidebarGroupLabel>Library Configuration</SidebarGroupLabel>
       <SidebarMenu>
         {items.map((item) => {
           const isActive =

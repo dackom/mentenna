@@ -19,7 +19,7 @@ import {
 import { Button } from "@/components/ui/button";
 
 interface MultiSelectProps {
-  options: string[];
+  options: string[] | Array<{ id: string; name: string }>;
   selected: string[];
   onChange: (selected: string[]) => void;
   placeholder?: string;
@@ -38,6 +38,32 @@ export function MultiSelect({
   const [open, setOpen] = React.useState(false);
   const [searchValue, setSearchValue] = useState("");
 
+  // Determine if options are objects or strings
+  const isObjectOptions = options.length > 0 && typeof options[0] === "object";
+
+  // Helper to get value from option
+  const getOptionValue = (
+    option: string | { id: string; name: string }
+  ): string => {
+    return typeof option === "string" ? option : option.id;
+  };
+
+  // Helper to get display name from option
+  const getOptionName = (
+    option: string | { id: string; name: string }
+  ): string => {
+    return typeof option === "string" ? option : option.name;
+  };
+
+  // Helper to get display name from selected value
+  const getDisplayName = (value: string): string => {
+    if (!isObjectOptions) return value;
+    const option = (options as Array<{ id: string; name: string }>).find(
+      (opt) => opt.id === value
+    );
+    return option?.name || value;
+  };
+
   const handleSelect = (value: string) => {
     const newSelected = selected.includes(value)
       ? selected.filter((item) => item !== value)
@@ -52,9 +78,10 @@ export function MultiSelect({
   // Filter options based on search value
   const filteredOptions = useMemo(() => {
     if (!searchValue.trim()) return options;
-    return options.filter((option) =>
-      option.toLowerCase().includes(searchValue.toLowerCase())
-    );
+    return options.filter((option) => {
+      const name = getOptionName(option);
+      return name.toLowerCase().includes(searchValue.toLowerCase());
+    });
   }, [options, searchValue]);
 
   return (
@@ -81,7 +108,7 @@ export function MultiSelect({
                     handleRemove(item);
                   }}
                 >
-                  {item}
+                  {getDisplayName(item)}
                   <span
                     className="ml-1 ring-offset-background rounded-full outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 cursor-pointer"
                     role="button"
@@ -118,37 +145,41 @@ export function MultiSelect({
           />
           <CommandEmpty>No personality found.</CommandEmpty>
           <CommandGroup className="max-h-64 overflow-auto">
-            {filteredOptions.map((option) => (
-              <CommandItem
-                key={option}
-                value={option}
-                onSelect={() => handleSelect(option)}
-                className="cursor-pointer"
-              >
-                <div
-                  className={`mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary ${
-                    selected.includes(option)
-                      ? "bg-primary text-primary-foreground"
-                      : "opacity-50 [&_svg]:invisible"
-                  }`}
+            {filteredOptions.map((option) => {
+              const value = getOptionValue(option);
+              const name = getOptionName(option);
+              return (
+                <CommandItem
+                  key={value}
+                  value={name}
+                  onSelect={() => handleSelect(value)}
+                  className="cursor-pointer"
                 >
-                  <svg
-                    className="h-4 w-4"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={2}
+                  <div
+                    className={`mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary ${
+                      selected.includes(value)
+                        ? "bg-primary text-primary-foreground"
+                        : "opacity-50 [&_svg]:invisible"
+                    }`}
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                </div>
-                <span>{option}</span>
-              </CommandItem>
-            ))}
+                    <svg
+                      className="h-4 w-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M5 13l4 4L19 7"
+                      />
+                    </svg>
+                  </div>
+                  <span>{name}</span>
+                </CommandItem>
+              );
+            })}
           </CommandGroup>
         </Command>
       </PopoverContent>

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
 
 export async function POST(req: NextRequest) {
   try {
@@ -11,9 +12,9 @@ export async function POST(req: NextRequest) {
       location,
       field,
       writingGenres,
-      personality,
-      writing_style_1,
-      writing_style_2,
+      personalityIds,
+      writingStyle1Id,
+      writingStyle2Id,
     } = body;
 
     // Build the prompt based on available data
@@ -36,14 +37,38 @@ export async function POST(req: NextRequest) {
       )
       .join(", ");
 
-    const personalityTraits = personality
-      ?.split(";")
-      .filter((p: string) => p.trim())
-      .join(", ");
+    // Fetch personality names from IDs
+    let personalityTraits = "";
+    if (personalityIds && personalityIds.length > 0) {
+      const personalities = await prisma.personality.findMany({
+        where: {
+          id: {
+            in: personalityIds,
+          },
+        },
+        select: {
+          name: true,
+        },
+      });
+      personalityTraits = personalities.map((p) => p.name).join(", ");
+    }
 
-    const writingStyles = [writing_style_1, writing_style_2]
-      .filter(Boolean)
-      .join(" and ");
+    // Fetch writing style names from IDs
+    const writingStyleIds = [writingStyle1Id, writingStyle2Id].filter(Boolean);
+    let writingStyles = "";
+    if (writingStyleIds.length > 0) {
+      const styles = await prisma.writingStyle.findMany({
+        where: {
+          id: {
+            in: writingStyleIds,
+          },
+        },
+        select: {
+          name: true,
+        },
+      });
+      writingStyles = styles.map((s) => s.name).join(" and ");
+    }
 
     // Construct the prompt
     let prompt = `Create a concise AI persona description for an author with the following characteristics:\n\n`;
@@ -126,7 +151,13 @@ Keep it professional, coherent, and flowing naturally.`;
       );
     }
 
-    return NextResponse.json({ persona: generatedPersona });
+    // Extract usage and cost information if available
+    const usage = data.usage;
+
+    return NextResponse.json({
+      persona: generatedPersona,
+      usage: usage || null,
+    });
   } catch (error) {
     console.error("Error generating persona:", error);
     return NextResponse.json(

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getGenre1ByWrites, getGenre2ByGenre1 } from "@/lib/db/genres";
-import { getWritingStyleOptions } from "@/lib/parse-writing-styles";
-import { getPersonalityOptions } from "@/lib/parse-personalities";
+import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
@@ -54,10 +53,24 @@ export async function GET(request: NextRequest) {
         options = [];
         break;
       case "writing_styles":
-        options = getWritingStyleOptions();
+        const writingStyles = await prisma.writingStyle.findMany({
+          orderBy: { order: "asc" },
+          select: { id: true, name: true },
+        });
+        options = writingStyles.map((ws: { id: string; name: string }) => ({
+          id: ws.id,
+          name: ws.name,
+        }));
         break;
       case "personalities":
-        options = getPersonalityOptions();
+        const personalities = await prisma.personality.findMany({
+          orderBy: { order: "asc" },
+          select: { id: true, name: true },
+        });
+        options = personalities.map((p: { id: string; name: string }) => ({
+          id: p.id,
+          name: p.name,
+        }));
         break;
       default:
         return NextResponse.json(

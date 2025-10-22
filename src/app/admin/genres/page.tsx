@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Genre1, Genre2 } from "@prisma/client";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -15,7 +15,9 @@ import {
 } from "@/components/ui/dialog";
 import { PlusIcon } from "lucide-react";
 import { toast } from "sonner";
-import { AdminH1 } from "@/components/admin-header";
+import { Card, CardContent } from "@/components/ui/card";
+import useSWR from "swr";
+import { fetcher } from "@/lib/fetcher";
 
 type Genre1WithGenre2 = Genre1 & {
   genre2Options: Genre2[];
@@ -34,28 +36,20 @@ type DialogState =
     };
 
 export default function GenresPage() {
-  const [genres, setGenres] = useState<Genre1WithGenre2[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data, isLoading, mutate } = useSWR<{ genres: Genre1WithGenre2[] }>(
+    "/api/admin/genres/genre1",
+    fetcher,
+    {
+      onError: (error) => {
+        toast.error("Failed to load genres");
+        console.error(error);
+      },
+    }
+  );
   const [dialog, setDialog] = useState<DialogState>({ open: false });
   const [activeTab, setActiveTab] = useState<string>("Fiction");
 
-  const fetchGenres = async () => {
-    try {
-      const response = await fetch("/api/admin/genres/genre1");
-      if (!response.ok) throw new Error("Failed to fetch genres");
-      const data = await response.json();
-      setGenres(data.genres);
-    } catch (error) {
-      toast.error("Failed to load genres");
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchGenres();
-  }, []);
+  const genres = data?.genres || [];
 
   const handleCreateGenre1 = async (data: { name: string; writes: string }) => {
     try {
@@ -69,7 +63,7 @@ export default function GenresPage() {
 
       toast.success("Genre created successfully");
       setDialog({ open: false });
-      fetchGenres();
+      mutate();
     } catch (error) {
       toast.error("Failed to create genre");
       console.error(error);
@@ -91,7 +85,7 @@ export default function GenresPage() {
 
       toast.success("Genre updated successfully");
       setDialog({ open: false });
-      fetchGenres();
+      mutate();
     } catch (error) {
       toast.error("Failed to update genre");
       console.error(error);
@@ -107,7 +101,7 @@ export default function GenresPage() {
       if (!response.ok) throw new Error("Failed to delete genre");
 
       toast.success("Genre deleted successfully");
-      fetchGenres();
+      mutate();
     } catch (error) {
       toast.error("Failed to delete genre");
       console.error(error);
@@ -129,7 +123,7 @@ export default function GenresPage() {
 
       toast.success("Sub-genre created successfully");
       setDialog({ open: false });
-      fetchGenres();
+      mutate();
     } catch (error) {
       toast.error("Failed to create sub-genre");
       console.error(error);
@@ -148,7 +142,7 @@ export default function GenresPage() {
 
       toast.success("Sub-genre updated successfully");
       setDialog({ open: false });
-      fetchGenres();
+      mutate();
     } catch (error) {
       toast.error("Failed to update sub-genre");
       console.error(error);
@@ -164,7 +158,7 @@ export default function GenresPage() {
       if (!response.ok) throw new Error("Failed to delete sub-genre");
 
       toast.success("Sub-genre deleted successfully");
-      fetchGenres();
+      mutate();
     } catch (error) {
       toast.error("Failed to delete sub-genre");
       console.error(error);
@@ -173,14 +167,21 @@ export default function GenresPage() {
 
   const filteredGenres = genres.filter((g) => g.writes === activeTab);
 
-  if (loading) {
+  if (isLoading) {
     return <div className="p-6">Loading...</div>;
   }
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <AdminH1>Genre Management</AdminH1>
+    <div className="container py-8 ">
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Genre Management
+          </h1>
+          <p className="text-muted-foreground">
+            Manage your genres and sub-genres
+          </p>
+        </div>
         <Button
           onClick={() =>
             setDialog({
@@ -203,39 +204,43 @@ export default function GenresPage() {
           <TabsTrigger value="Speculative">Speculative</TabsTrigger>
         </TabsList>
 
-        {["Fiction", "Non-fiction", "Speculative"].map((category) => (
-          <TabsContent key={category} value={category} className="mt-4">
-            <GenreTable
-              genres={filteredGenres}
-              onEditGenre1={(genre) =>
-                setDialog({
-                  open: true,
-                  type: "genre1",
-                  mode: "edit",
-                  data: genre,
-                })
-              }
-              onDeleteGenre1={handleDeleteGenre1}
-              onAddGenre2={(genre1Id) =>
-                setDialog({
-                  open: true,
-                  type: "genre2",
-                  mode: "create",
-                  data: { genre1Id },
-                })
-              }
-              onEditGenre2={(genre) =>
-                setDialog({
-                  open: true,
-                  type: "genre2",
-                  mode: "edit",
-                  data: { ...genre, genre1Id: genre.genre1Id },
-                })
-              }
-              onDeleteGenre2={handleDeleteGenre2}
-            />
-          </TabsContent>
-        ))}
+        <Card className="py-2 px-2 pt-0">
+          <CardContent className="p-0">
+            {["Fiction", "Non-fiction", "Speculative"].map((category) => (
+              <TabsContent key={category} value={category} className="mt-4">
+                <GenreTable
+                  genres={filteredGenres}
+                  onEditGenre1={(genre) =>
+                    setDialog({
+                      open: true,
+                      type: "genre1",
+                      mode: "edit",
+                      data: genre,
+                    })
+                  }
+                  onDeleteGenre1={handleDeleteGenre1}
+                  onAddGenre2={(genre1Id) =>
+                    setDialog({
+                      open: true,
+                      type: "genre2",
+                      mode: "create",
+                      data: { genre1Id },
+                    })
+                  }
+                  onEditGenre2={(genre) =>
+                    setDialog({
+                      open: true,
+                      type: "genre2",
+                      mode: "edit",
+                      data: { ...genre, genre1Id: genre.genre1Id },
+                    })
+                  }
+                  onDeleteGenre2={handleDeleteGenre2}
+                />
+              </TabsContent>
+            ))}
+          </CardContent>
+        </Card>
       </Tabs>
 
       <Dialog

@@ -15,6 +15,13 @@ export async function GET() {
             genre2: true,
           },
         },
+        personalities: {
+          include: {
+            personality: true,
+          },
+        },
+        writingStyle1: true,
+        writingStyle2: true,
       },
       orderBy: {
         createdAt: "desc",
@@ -37,7 +44,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const validatedData = authorSchema.parse(body);
 
-    const { writingGenres, ...authorData } = validatedData;
+    const { writingGenres, personalityIds, ...authorData } = validatedData;
 
     // Populate legacy genre fields by looking up names from IDs
     const genresWithNames = await Promise.all(
@@ -77,9 +84,21 @@ export async function POST(request: Request) {
         writingGenres: {
           create: genresWithNames,
         },
+        personalities: {
+          create: (personalityIds || []).map((personalityId) => ({
+            personalityId,
+          })),
+        },
       },
       include: {
         writingGenres: true,
+        personalities: {
+          include: {
+            personality: true,
+          },
+        },
+        writingStyle1: true,
+        writingStyle2: true,
       },
     });
 

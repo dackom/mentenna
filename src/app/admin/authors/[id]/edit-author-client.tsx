@@ -24,9 +24,10 @@ interface EditAuthorClientProps {
     age?: string | null;
     location?: string | null;
     living?: string | null;
-    personality?: string | null;
-    writing_style_1?: string | null;
-    writing_style_2?: string | null;
+    writingStyle1Id?: string | null;
+    writingStyle1?: { id: string; name: string } | null;
+    writingStyle2Id?: string | null;
+    writingStyle2?: { id: string; name: string } | null;
     ai_persona?: string | null;
     writingGenres?: Array<{
       id?: string;
@@ -34,6 +35,13 @@ interface EditAuthorClientProps {
       genre_1?: string | null;
       genre_2?: string | null;
       genre_3?: string | null;
+    }>;
+    personalities?: Array<{
+      personalityId: string;
+      personality: {
+        id: string;
+        name: string;
+      };
     }>;
   };
 }
@@ -94,9 +102,10 @@ export function EditAuthorClient({ author }: EditAuthorClientProps) {
               age: author.age || "",
               location: author.location || "",
               living: author.living || "",
-              personality: author.personality || "",
-              writing_style_1: author.writing_style_1 || "",
-              writing_style_2: author.writing_style_2 || "",
+              personalityIds:
+                author.personalities?.map((p) => p.personalityId) || [],
+              writingStyle1Id: author.writingStyle1Id || "",
+              writingStyle2Id: author.writingStyle2Id || "",
               ai_persona: author.ai_persona || "",
               writingGenres: author.writingGenres || [],
             }}

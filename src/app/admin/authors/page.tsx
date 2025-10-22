@@ -5,6 +5,13 @@ export default async function AuthorsPage() {
   const authors = await prisma.author.findMany({
     include: {
       writingGenres: true,
+      personalities: {
+        include: {
+          personality: true,
+        },
+      },
+      writingStyle1: true,
+      writingStyle2: true,
     },
     orderBy: {
       createdAt: "desc",

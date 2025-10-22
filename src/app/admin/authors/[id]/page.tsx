@@ -18,6 +18,13 @@ export default async function EditAuthorPage({ params }: EditAuthorPageProps) {
           genre2: true,
         },
       },
+      personalities: {
+        include: {
+          personality: true,
+        },
+      },
+      writingStyle1: true,
+      writingStyle2: true,
     },
   });
 
@@ -40,6 +47,9 @@ export default async function EditAuthorPage({ params }: EditAuthorPageProps) {
       genre1: wg.genre1,
       genre2: wg.genre2,
     })),
+    personalities: author.personalities,
+    writingStyle1: author.writingStyle1,
+    writingStyle2: author.writingStyle2,
   };
 
   return <EditAuthorClient author={clientAuthor} />;
