@@ -83,6 +83,7 @@ model Author {
   age                String?
   location           String?
   living             String?
+  image              String?
   writingStyle1Id    String?
   writingStyle1      WritingStyle?        @relation("AuthorWritingStyle1", fields: [writingStyle1Id], references: [id], onDelete: SetNull)
   writingStyle2Id    String?

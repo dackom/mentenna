@@ -20,6 +20,7 @@ import { toast } from "sonner";
 type Author = {
   id: string;
   name: string;
+  image?: string | null;
   continent?: string | null;
   field?: string | null;
   pronouns?: string | null;
@@ -115,6 +116,7 @@ export function AuthorsClient({ initialAuthors }: AuthorsClientProps) {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-16"></TableHead>
                     <TableHead>Name</TableHead>
                     <TableHead>Personalities</TableHead>
                     <TableHead>Writes</TableHead>
@@ -125,6 +127,27 @@ export function AuthorsClient({ initialAuthors }: AuthorsClientProps) {
                 <TableBody>
                   {initialAuthors.map((author) => (
                     <TableRow key={author.id}>
+                      <TableCell className="w-16">
+                        {author.image ? (
+                          <a
+                            href={`/api/avatars/${author.image}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block"
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={`/api/avatars/${author.image}`}
+                              alt={`${author.name} avatar`}
+                              className="size-10 rounded-full object-cover border hover:opacity-80 transition-opacity cursor-pointer"
+                            />
+                          </a>
+                        ) : (
+                          <div className="size-10 rounded-full bg-muted flex items-center justify-center text-muted-foreground text-sm font-medium">
+                            {author.name.charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                      </TableCell>
                       <TableCell className="font-medium">
                         {author.name}
                       </TableCell>

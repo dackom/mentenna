@@ -24,6 +24,7 @@ interface EditAuthorClientProps {
     age?: string | null;
     location?: string | null;
     living?: string | null;
+    image?: string | null;
     writingStyle1Id?: string | null;
     writingStyle1?: { id: string; name: string } | null;
     writingStyle2Id?: string | null;
@@ -95,6 +96,7 @@ export function EditAuthorClient({ author }: EditAuthorClientProps) {
         <CardContent>
           <AuthorForm
             defaultValues={{
+              id: author.id,
               name: author.name,
               continent: author.continent || "",
               field: author.field || "",
@@ -102,6 +104,7 @@ export function EditAuthorClient({ author }: EditAuthorClientProps) {
               age: author.age || "",
               location: author.location || "",
               living: author.living || "",
+              image: author.image || "",
               personalityIds:
                 author.personalities?.map((p) => p.personalityId) || [],
               writingStyle1Id: author.writingStyle1Id || "",

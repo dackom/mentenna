@@ -3,6 +3,9 @@ import { prisma } from "@/lib/prisma";
 import { authorUpdateSchema } from "@/lib/validations/author";
 import { v4 as uuidv4 } from "uuid";
 import { getGenre1ById, getGenre2ById } from "@/lib/db/genres";
+import { unlink } from "fs/promises";
+import { existsSync } from "fs";
+import path from "path";
 
 // GET /api/authors/[id] - Get a single author
 export async function GET(
@@ -148,9 +151,32 @@ export async function DELETE(
   try {
     const { id } = await params;
 
+    // First, get the author to check if they have an image
+    const author = await prisma.author.findUnique({
+      where: { id },
+      select: { image: true },
+    });
+
+    // Delete the author from database
     await prisma.author.delete({
       where: { id },
     });
+
+    // If author had an image, delete it from filesystem
+    if (author?.image) {
+      try {
+        const uploadDir = process.env.AVATAR_UPLOAD_DIR || "avatars";
+        const uploadsPath = path.join(process.cwd(), uploadDir);
+        const filePath = path.join(uploadsPath, author.image);
+
+        if (existsSync(filePath)) {
+          await unlink(filePath);
+        }
+      } catch (error) {
+        console.error("Error deleting avatar file:", error);
+        // Continue anyway - author is already deleted from DB
+      }
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {

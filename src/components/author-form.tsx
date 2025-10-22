@@ -27,7 +27,7 @@ import useSWR from "swr";
 import { fetcher } from "@/lib/fetcher";
 
 interface AuthorFormProps {
-  defaultValues?: Partial<AuthorFormData>;
+  defaultValues?: Partial<AuthorFormData> & { id?: string };
   onSubmit: (data: AuthorFormData) => Promise<void>;
   onCancel?: () => void;
   submitLabel?: string;
@@ -50,6 +50,7 @@ export function AuthorForm({
       age: defaultValues?.age || "",
       location: defaultValues?.location || "",
       living: defaultValues?.living || "",
+      image: defaultValues?.image || "",
       personalityIds: defaultValues?.personalityIds || [],
       writingStyle1Id: defaultValues?.writingStyle1Id || "",
       writingStyle2Id: defaultValues?.writingStyle2Id || "",
@@ -103,6 +104,17 @@ export function AuthorForm({
     total_tokens?: number;
   } | null>(null);
 
+  // State for AI avatar generation
+  const [generatingAvatar, setGeneratingAvatar] = useState(false);
+  const [avatarImage, setAvatarImage] = useState<string | null>(
+    defaultValues?.image || null
+  );
+  const [lastAvatarGenerationCost, setLastAvatarGenerationCost] = useState<{
+    prompt_tokens?: number;
+    completion_tokens?: number;
+    total_tokens?: number;
+  } | null>(null);
+
   // Calculate cost in USD based on token usage
   // Pricing for gpt-3.5-turbo-16k: $3/M input tokens, $4/M output tokens
   const calculateCost = (usage: typeof lastGenerationCost): number | null => {
@@ -149,6 +161,13 @@ export function AuthorForm({
       setSelectedPersonalities([]);
     }
   }, [defaultValues]);
+
+  // Sync avatar image when defaultValues change (for editing)
+  useEffect(() => {
+    if (defaultValues?.image) {
+      setAvatarImage(defaultValues.image);
+    }
+  }, [defaultValues?.image]);
 
   // Helper functions to fetch genre options for a specific row
   const fetchGenre1Options = async (rowIndex: number, writes: string) => {
@@ -286,10 +305,11 @@ export function AuthorForm({
       (row) => row.writes || row.genre1Id || row.genre2Id || row.genre_3
     );
 
-    const submissionData: AuthorFormData = {
+    const submissionData: AuthorFormData & { image?: string | null } = {
       ...data,
       personalityIds: selectedPersonalities,
       writingGenres: filteredGenres,
+      image: avatarImage,
     };
     await onSubmit(submissionData);
   };
@@ -337,6 +357,53 @@ export function AuthorForm({
       alert("Failed to generate AI persona. Please try again.");
     } finally {
       setGeneratingPersona(false);
+    }
+  };
+
+  const handleGenerateAvatar = async () => {
+    setGeneratingAvatar(true);
+    try {
+      // Get current form values
+      const formValues = form.getValues();
+
+      const response = await fetch("/api/generate-avatar", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          authorId: defaultValues?.id || null,
+          name: formValues.name,
+          pronouns: formValues.pronouns,
+          age: formValues.age,
+          continent: formValues.continent,
+          location: formValues.location,
+          field: formValues.field,
+          writingGenres: genreRows,
+          personalityIds: selectedPersonalities,
+          writingStyle1Id: formValues.writingStyle1Id,
+          writingStyle2Id: formValues.writingStyle2Id,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to generate avatar");
+      }
+
+      const data = await response.json();
+
+      // Update the avatar image
+      setAvatarImage(data.filename);
+
+      // Store usage information if available
+      if (data.usage) {
+        setLastAvatarGenerationCost(data.usage);
+      }
+    } catch (error) {
+      console.error("Error generating avatar:", error);
+      alert("Failed to generate AI avatar. Please try again.");
+    } finally {
+      setGeneratingAvatar(false);
     }
   };
 
@@ -730,6 +797,64 @@ export function AuthorForm({
           {errors.ai_persona && (
             <p className="text-sm text-destructive">
               {errors.ai_persona.message}
+            </p>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="image">AI avatar image</Label>
+          {avatarImage && (
+            <div className="flex items-center gap-4">
+              <a
+                href={`/api/avatars/${avatarImage}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={`/api/avatars/${avatarImage}`}
+                  alt="Author avatar"
+                  className="size-32 rounded-lg object-cover border hover:opacity-80 transition-opacity cursor-pointer"
+                />
+              </a>
+            </div>
+          )}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleGenerateAvatar}
+            disabled={generatingAvatar}
+            title="Generate new AI avatar image"
+          >
+            {generatingAvatar ? (
+              <Loader2Icon className="animate-spin" />
+            ) : avatarImage ? (
+              "Regenerate AI avatar image"
+            ) : (
+              "Generate AI avatar image"
+            )}
+          </Button>
+          {lastAvatarGenerationCost && (
+            <p className="text-xs text-muted-foreground">
+              Last generation: {lastAvatarGenerationCost.total_tokens || 0}{" "}
+              tokens
+              {lastAvatarGenerationCost.prompt_tokens &&
+                lastAvatarGenerationCost.completion_tokens && (
+                  <>
+                    {" "}
+                    ({lastAvatarGenerationCost.prompt_tokens} prompt +{" "}
+                    {lastAvatarGenerationCost.completion_tokens} completion)
+                  </>
+                )}
+              {calculateCost(lastAvatarGenerationCost) !== null && (
+                <>
+                  <br />• Cost estimate: $
+                  {calculateCost(lastAvatarGenerationCost)!.toFixed(6)} (might
+                  be completely wrong, do not rely on this)
+                </>
+              )}
             </p>
           )}
         </div>
