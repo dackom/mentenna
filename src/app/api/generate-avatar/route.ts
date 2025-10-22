@@ -147,8 +147,7 @@ export async function POST(req: NextRequest) {
     const filename = authorId ? `${authorId}.png` : `avatar-${timestamp}.png`;
 
     // Get upload directory from environment
-    const uploadDir = process.env.AVATAR_UPLOAD_DIR || "avatars";
-    const uploadsPath = path.join(process.cwd(), uploadDir);
+    const uploadsPath = process.env.AVATAR_UPLOAD_DIR || "avatars";
 
     // If author has an existing image and we're regenerating, delete the old one
     if (authorId) {
