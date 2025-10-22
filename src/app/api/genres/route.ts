@@ -54,13 +54,16 @@ export async function GET(request: NextRequest) {
         break;
       case "writing_styles":
         const writingStyles = await prisma.writingStyle.findMany({
-          orderBy: { order: "asc" },
-          select: { id: true, name: true },
+          orderBy: [{ group: "asc" }, { order: "asc" }],
+          select: { id: true, name: true, group: true },
         });
-        options = writingStyles.map((ws: { id: string; name: string }) => ({
-          id: ws.id,
-          name: ws.name,
-        }));
+        options = writingStyles.map(
+          (ws: { id: string; name: string; group: string | null }) => ({
+            id: ws.id,
+            name: ws.name,
+            group: ws.group ?? "",
+          })
+        );
         break;
       case "personalities":
         const personalities = await prisma.personality.findMany({

@@ -83,7 +83,7 @@ export function AuthorForm({
 
   // Fetch writing styles using SWR
   const { data: writingStylesData, isLoading: loadingWritingStyles } = useSWR<{
-    options: Array<{ id: string; name: string }>;
+    options: Array<{ id: string; name: string; group: string }>;
   }>("/api/genres?level=writing_styles", fetcher);
 
   const writingStyleOptions = writingStylesData?.options || [];
@@ -640,7 +640,7 @@ export function AuthorForm({
                 ) : (
                   writingStyleOptions.map((option) => (
                     <SelectItem key={option.id} value={option.id}>
-                      {option.name}
+                      [{option.group}] {option.name}
                     </SelectItem>
                   ))
                 )}
@@ -674,7 +674,7 @@ export function AuthorForm({
                 ) : (
                   writingStyleOptions.map((option) => (
                     <SelectItem key={option.id} value={option.id}>
-                      {option.name}
+                      [{option.group}] {option.name}
                     </SelectItem>
                   ))
                 )}

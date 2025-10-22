@@ -91,7 +91,7 @@ export function Genre1Form({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="name">Genre Name</Label>
+        <Label htmlFor="name">Primary Genre</Label>
         <Input
           id="name"
           {...register("name")}

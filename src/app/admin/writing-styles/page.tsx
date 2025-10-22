@@ -35,6 +35,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { PlusIcon, PencilIcon, TrashIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type DialogState =
   | { open: false }
@@ -57,7 +64,11 @@ export default function WritingStylesPage() {
     open: boolean;
     writingStyle: WritingStyle | null;
   }>({ open: false, writingStyle: null });
-  const [formData, setFormData] = useState({ name: "", description: "" });
+  const [formData, setFormData] = useState({
+    name: "",
+    description: "",
+    group: "",
+  });
   const [submitting, setSubmitting] = useState(false);
 
   const writingStyles = data?.writingStyles || [];
@@ -67,9 +78,10 @@ export default function WritingStylesPage() {
       setFormData({
         name: dialog.data.name,
         description: dialog.data.description,
+        group: dialog.data.group ?? "",
       });
     } else {
-      setFormData({ name: "", description: "" });
+      setFormData({ name: "", description: "", group: "" });
     }
   }, [dialog]);
 
@@ -167,6 +179,7 @@ export default function WritingStylesPage() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>Group</TableHead>
                 <TableHead className="w-[200px]">Name</TableHead>
                 <TableHead>Description</TableHead>
                 <TableHead className="w-[100px]">Actions</TableHead>
@@ -185,6 +198,9 @@ export default function WritingStylesPage() {
               ) : (
                 writingStyles.map((writingStyle) => (
                   <TableRow key={writingStyle.id}>
+                    <TableCell className="font-medium">
+                      {writingStyle.group}
+                    </TableCell>
                     <TableCell className="font-medium">
                       {writingStyle.name}
                     </TableCell>
@@ -240,6 +256,24 @@ export default function WritingStylesPage() {
           </DialogHeader>
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Group</Label>
+              <Select
+                value={formData.group}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, group: value })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select group" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Fiction">Fiction</SelectItem>
+                  <SelectItem value="Non-fiction">Non-fiction</SelectItem>
+                  <SelectItem value="Speculative">Speculative</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <div className="space-y-2">
               <Label htmlFor="name">Writing Style Name</Label>
               <Input

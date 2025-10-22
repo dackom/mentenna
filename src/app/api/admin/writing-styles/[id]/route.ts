@@ -9,7 +9,7 @@ export async function PATCH(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { name, description } = body;
+    const { name, description, group } = body;
 
     if (!name || typeof name !== "string" || !name.trim()) {
       return NextResponse.json(
@@ -34,20 +34,13 @@ export async function PATCH(
       data: {
         name: name.trim(),
         description: description.trim(),
+        group: group ? group.trim() : null,
       },
     });
 
     return NextResponse.json({ writingStyle });
   } catch (error: any) {
     console.error("Error updating writing style:", error);
-
-    // Handle unique constraint violation
-    if (error.code === "P2002") {
-      return NextResponse.json(
-        { error: "A writing style with this name already exists" },
-        { status: 409 }
-      );
-    }
 
     // Handle not found
     if (error.code === "P2025") {

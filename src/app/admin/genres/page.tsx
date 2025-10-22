@@ -256,8 +256,8 @@ export default function GenresPage() {
                   : "Edit Genre"
                 : dialog.open && dialog.type === "genre2"
                   ? dialog.mode === "create"
-                    ? "Add Sub-Genre"
-                    : "Edit Sub-Genre"
+                    ? "Add Genre"
+                    : "Edit Genre"
                   : ""}
             </DialogTitle>
           </DialogHeader>

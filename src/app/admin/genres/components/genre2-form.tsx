@@ -80,7 +80,7 @@ export function Genre2Form({
   return (
     <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="genre1Id">Parent Genre</Label>
+        <Label htmlFor="genre1Id">Primary Genre</Label>
         <Select
           value={genre1Id}
           onValueChange={(value) => setValue("genre1Id", value)}
@@ -109,7 +109,7 @@ export function Genre2Form({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="name">Sub-Genre Name</Label>
+        <Label htmlFor="name">Secondary Genre</Label>
         <Input
           id="name"
           {...register("name")}

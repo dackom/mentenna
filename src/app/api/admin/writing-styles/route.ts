@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   try {
     const writingStyles = await prisma.writingStyle.findMany({
-      orderBy: { order: "asc" },
+      orderBy: [{ group: "asc" }, { order: "asc" }],
     });
 
     return NextResponse.json({ writingStyles });
@@ -24,7 +24,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, description } = body;
+    const { name, description, group } = body;
 
     if (!name || typeof name !== "string" || !name.trim()) {
       return NextResponse.json(
@@ -54,6 +54,7 @@ export async function POST(request: NextRequest) {
       data: {
         name: name.trim(),
         description: description.trim(),
+        group: group ? group.trim() : null,
         order: (maxOrder?.order ?? -1) + 1,
       },
     });
@@ -61,14 +62,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ writingStyle }, { status: 201 });
   } catch (error: any) {
     console.error("Error creating writing style:", error);
-
-    // Handle unique constraint violation
-    if (error.code === "P2002") {
-      return NextResponse.json(
-        { error: "A writing style with this name already exists" },
-        { status: 409 }
-      );
-    }
 
     return NextResponse.json(
       { error: "Failed to create writing style" },

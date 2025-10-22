@@ -83,8 +83,8 @@ export function GenreTable({
         <TableHeader>
           <TableRow>
             <TableHead className="w-12"></TableHead>
-            <TableHead>Genre Name</TableHead>
-            <TableHead className="w-32">Sub-Genres</TableHead>
+            <TableHead>Primary Genre</TableHead>
+            <TableHead className="w-32">Secondary Genres</TableHead>
             <TableHead className="w-32 text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -161,7 +161,7 @@ export function GenreTable({
                           variant="ghost"
                           size="sm"
                           onClick={() => onEditGenre2(genre2)}
-                          title="Edit sub-genre"
+                          title="Edit secondary genre"
                         >
                           <EditIcon className="h-4 w-4" />
                         </Button>
@@ -176,7 +176,7 @@ export function GenreTable({
                               name: genre2.name,
                             })
                           }
-                          title="Delete sub-genre"
+                          title="Delete secondary genre"
                         >
                           <Trash2Icon className="h-4 w-4" />
                         </Button>
