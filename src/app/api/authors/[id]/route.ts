@@ -165,8 +165,7 @@ export async function DELETE(
     // If author had an image, delete it from filesystem
     if (author?.image) {
       try {
-        const uploadDir = process.env.AVATAR_UPLOAD_DIR || "avatars";
-        const uploadsPath = path.join(process.cwd(), uploadDir);
+        const uploadsPath = process.env.AVATAR_UPLOAD_DIR || "avatars";
         const filePath = path.join(uploadsPath, author.image);
 
         if (existsSync(filePath)) {

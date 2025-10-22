@@ -11,8 +11,7 @@ export async function GET(
     const { filename } = await params;
 
     // Get upload directory from environment
-    const uploadDir = process.env.AVATAR_UPLOAD_DIR || "avatars";
-    const uploadsPath = path.join(process.cwd(), uploadDir);
+    const uploadsPath = process.env.AVATAR_UPLOAD_DIR || "avatars";
     const filePath = path.join(uploadsPath, filename);
 
     // Check if file exists
