@@ -85,14 +85,14 @@ export function AuthorForm({
   // Fetch writing styles using SWR
   const { data: writingStylesData, isLoading: loadingWritingStyles } = useSWR<{
     options: Array<{ id: string; name: string; group: string }>;
-  }>("/api/genres?level=writing_styles", fetcher);
+  }>("/api/admin/genres?level=writing_styles", fetcher);
 
   const writingStyleOptions = writingStylesData?.options || [];
 
   // Fetch personalities using SWR
   const { data: personalitiesData, isLoading: loadingPersonalities } = useSWR<{
     options: Array<{ id: string; name: string }>;
-  }>("/api/genres?level=personalities", fetcher);
+  }>("/api/admin/genres?level=personalities", fetcher);
 
   const personalityOptions = personalitiesData?.options || [];
 
@@ -177,7 +177,7 @@ export function AuthorForm({
     }));
     try {
       const data = await fetcher(
-        `/api/genres?level=genre_1&writes=${encodeURIComponent(writes)}`
+        `/api/admin/genres?level=genre_1&writes=${encodeURIComponent(writes)}`
       );
       setRowGenre1Options((prev) => ({
         ...prev,
@@ -200,7 +200,7 @@ export function AuthorForm({
     }));
     try {
       const data = await fetcher(
-        `/api/genres?level=genre_2&genre1Id=${encodeURIComponent(genre1Id)}`
+        `/api/admin/genres?level=genre_2&genre1Id=${encodeURIComponent(genre1Id)}`
       );
       setRowGenre2Options((prev) => ({
         ...prev,
@@ -320,7 +320,7 @@ export function AuthorForm({
       // Get current form values
       const formValues = form.getValues();
 
-      const response = await fetch("/api/generate-persona", {
+      const response = await fetch("/api/admin/generate-persona", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -366,7 +366,7 @@ export function AuthorForm({
       // Get current form values
       const formValues = form.getValues();
 
-      const response = await fetch("/api/generate-avatar", {
+      const response = await fetch("/api/admin/generate-avatar", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

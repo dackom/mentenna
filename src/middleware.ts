@@ -20,10 +20,23 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
+  // Handle API admin routes
+  if (pathname.startsWith("/api/admin")) {
+    const session = await auth.api.getSession({
+      headers: await headers(),
+    });
+
+    if (session?.user.role === "admin") {
+      return NextResponse.next();
+    }
+
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   return NextResponse.next();
 }
 
 export const config = {
   runtime: "nodejs",
-  matcher: ["/admin/:path*"],
+  matcher: ["/admin/:path*", "/api/admin/:path*"],
 };

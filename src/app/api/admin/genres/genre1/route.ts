@@ -1,17 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAllGenre1, getGenre1ByWrites, createGenre1 } from "@/lib/db/genres";
-import { auth } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await auth.api.getSession({
-      headers: request.headers,
-    });
-
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const searchParams = request.nextUrl.searchParams;
     const writes = searchParams.get("writes");
 
@@ -34,14 +25,6 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await auth.api.getSession({
-      headers: request.headers,
-    });
-
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const body = await request.json();
     const { name, writes, order } = body;
 

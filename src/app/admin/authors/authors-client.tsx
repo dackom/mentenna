@@ -15,7 +15,15 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { DeleteAuthorDialog } from "@/components/delete-author-dialog";
 import { PlusIcon, PencilIcon, TrashIcon } from "lucide-react";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import Image from "next/image";
 import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 type Author = {
   id: string;
@@ -64,7 +72,7 @@ export function AuthorsClient({ initialAuthors }: AuthorsClientProps) {
     if (!deletingAuthor) return;
 
     try {
-      const response = await fetch(`/api/authors/${deletingAuthor.id}`, {
+      const response = await fetch(`/api/admin/authors/${deletingAuthor.id}`, {
         method: "DELETE",
       });
 
@@ -127,26 +135,30 @@ export function AuthorsClient({ initialAuthors }: AuthorsClientProps) {
                 <TableBody>
                   {initialAuthors.map((author) => (
                     <TableRow key={author.id}>
-                      <TableCell className="w-16">
-                        {author.image ? (
-                          <a
-                            href={`/api/avatars/${author.image}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="block"
-                          >
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                              src={`/api/avatars/${author.image}`}
-                              alt={`${author.name} avatar`}
-                              className="size-10 rounded-full object-cover border hover:opacity-80 transition-opacity cursor-pointer"
+                      <TableCell className="w-10">
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Avatar className="size-10 cursor-pointer">
+                              <AvatarImage
+                                src={`${process.env.NEXT_PUBLIC_AVATAR_URL_PREFIX}/api/avatars/${author.image}`}
+                              />
+                              <AvatarFallback>
+                                {author.name.charAt(0).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogTitle>{author.name}</DialogTitle>
+                            <Image
+                              src={`${process.env.NEXT_PUBLIC_AVATAR_URL_PREFIX}/api/avatars/${author.image}`}
+                              alt={author.name}
+                              className="w-full h-full object-cover"
+                              width={200}
+                              height={200}
+                              loading="lazy"
                             />
-                          </a>
-                        ) : (
-                          <div className="size-10 rounded-full bg-muted flex items-center justify-center text-muted-foreground text-sm font-medium">
-                            {author.name.charAt(0).toUpperCase()}
-                          </div>
-                        )}
+                          </DialogContent>
+                        </Dialog>
                       </TableCell>
                       <TableCell className="font-medium">
                         {author.name}

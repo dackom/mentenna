@@ -19,7 +19,7 @@ export default function NewAuthorPage() {
 
   const handleSubmit = async (data: AuthorFormData) => {
     try {
-      const response = await fetch("/api/authors", {
+      const response = await fetch("/api/admin/authors", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),

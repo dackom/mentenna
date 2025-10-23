@@ -52,7 +52,7 @@ export function EditAuthorClient({ author }: EditAuthorClientProps) {
 
   const handleSubmit = async (data: AuthorFormData) => {
     try {
-      const response = await fetch(`/api/authors/${author.id}`, {
+      const response = await fetch(`/api/admin/authors/${author.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),

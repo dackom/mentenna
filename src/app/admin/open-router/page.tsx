@@ -57,7 +57,7 @@ export default function OpenRouterPage() {
       setRefreshing(true);
 
       // Fetch credits/key info
-      const creditsResponse = await fetch("/api/open-router/credits");
+      const creditsResponse = await fetch("/api/admin/open-router/credits");
       if (creditsResponse.ok) {
         const creditsData = await creditsResponse.json();
         setKeyData(creditsData);
@@ -67,7 +67,7 @@ export default function OpenRouterPage() {
       }
 
       // Fetch activity data
-      const activityResponse = await fetch("/api/open-router/activity");
+      const activityResponse = await fetch("/api/admin/open-router/activity");
       if (activityResponse.ok) {
         const activityData = await activityResponse.json();
         setActivityData(activityData);

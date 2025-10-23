@@ -1,17 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getGenre2ByGenre1, createGenre2 } from "@/lib/db/genres";
-import { auth } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await auth.api.getSession({
-      headers: request.headers,
-    });
-
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const searchParams = request.nextUrl.searchParams;
     const genre1Id = searchParams.get("genre1Id");
 
@@ -36,14 +27,6 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await auth.api.getSession({
-      headers: request.headers,
-    });
-
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const body = await request.json();
     const { name, genre1Id, order } = body;
 
