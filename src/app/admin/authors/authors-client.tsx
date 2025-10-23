@@ -153,8 +153,8 @@ export function AuthorsClient({ initialAuthors }: AuthorsClientProps) {
                               src={`${process.env.NEXT_PUBLIC_AVATAR_URL_PREFIX}/api/avatars/${author.image}`}
                               alt={author.name}
                               className="w-full h-full object-cover"
-                              width={200}
-                              height={200}
+                              width={500}
+                              height={500}
                               loading="lazy"
                             />
                           </DialogContent>
