@@ -5,6 +5,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, DollarSign, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableHead,
+  TableRow,
+  TableCell,
+} from "@/components/ui/table";
 
 interface OpenRouterCreditsData {
   data?: {
@@ -21,8 +29,26 @@ interface OpenRouterCreditsData {
   };
 }
 
+interface OpenRouterActivityData {
+  data?: {
+    date: string;
+    model: string;
+    model_permaslug: string;
+    endpoint_id: string;
+    provider_name: string;
+    usage: number;
+    byok_usage_inference: number;
+    requests: number;
+    prompt_tokens: number;
+    completion_tokens: number;
+    reasoning_tokens: number;
+  }[];
+}
+
 export default function OpenRouterPage() {
   const [keyData, setKeyData] = useState<OpenRouterCreditsData | null>(null);
+  const [activityData, setActivityData] =
+    useState<OpenRouterActivityData | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -38,6 +64,16 @@ export default function OpenRouterPage() {
       } else {
         console.error("Failed to fetch credits data");
         toast.error("Failed to load OpenRouter data");
+      }
+
+      // Fetch activity data
+      const activityResponse = await fetch("/api/open-router/activity");
+      if (activityResponse.ok) {
+        const activityData = await activityResponse.json();
+        setActivityData(activityData);
+      } else {
+        console.error("Failed to fetch activity data");
+        toast.error("Failed to load OpenRouter activity");
       }
     } catch (error) {
       console.error("Error fetching OpenRouter data:", error);
@@ -141,21 +177,39 @@ export default function OpenRouterPage() {
               </CardContent>
             </Card>
           </div>
-
-          {/* Rate Limit Info */}
-          {keyData?.data?.rate_limit && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Rate Limit</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  {keyData.data.rate_limit.requests} requests per{" "}
-                  {keyData.data.rate_limit.interval}
-                </p>
-              </CardContent>
-            </Card>
-          )}
+          <Card className="mt-4">
+            <CardHeader>
+              <CardTitle>Activity</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Model</TableHead>
+                    <TableHead>Usage</TableHead>
+                    <TableHead>Requests</TableHead>
+                    <TableHead>Tokens (in/out)</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {activityData?.data?.map((item, index) => (
+                    <TableRow key={item.date + index}>
+                      <TableCell>
+                        {new Date(item.date).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell>{item.model}</TableCell>
+                      <TableCell>${item.usage?.toFixed(4)}</TableCell>
+                      <TableCell>{item.requests}</TableCell>
+                      <TableCell>
+                        {item.prompt_tokens} / {item.completion_tokens}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
         </>
       )}
     </div>
