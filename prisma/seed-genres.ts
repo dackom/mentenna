@@ -9,6 +9,10 @@ type GenreRow = {
   genre_1?: string;
   genre_2?: string;
   genre_3?: string;
+  reading_grade?: string;
+  chapter_count?: string;
+  word_count?: string;
+  price?: string;
 };
 
 function parseCSV(csvPath: string): GenreRow[] {
@@ -22,7 +26,11 @@ function parseCSV(csvPath: string): GenreRow[] {
         writes: columns[0] || "",
         genre_1: columns[1] || undefined,
         genre_2: columns[2] || undefined,
-        genre_3: columns[3] || undefined,
+        genre_3: undefined, // This is not in the CSV, it's free text
+        reading_grade: columns[3] || undefined, // 4th column (index 3)
+        chapter_count: columns[4] || undefined, // 5th column (index 4)
+        word_count: columns[5] || undefined, // 6th column (index 5)
+        price: columns[6] || undefined, // 7th column (index 6)
       };
     })
     .filter((row) => row.writes); // Filter out empty rows
@@ -31,7 +39,13 @@ function parseCSV(csvPath: string): GenreRow[] {
 async function seedGenres() {
   console.log("🌱 Starting genre seeding...");
 
-  const csvPath = path.join(process.cwd(), "src", "csvs", "genres.csv");
+  // Clear existing data first
+  console.log("🗑️ Clearing existing Genre1 and Genre2 data...");
+  await prisma.genre2.deleteMany({});
+  await prisma.genre1.deleteMany({});
+  console.log("✅ Cleared existing data");
+
+  const csvPath = path.join(process.cwd(), "prisma", "genres.csv");
   const rows = parseCSV(csvPath);
 
   console.log(`📖 Parsed ${rows.length} rows from CSV`);
@@ -39,10 +53,24 @@ async function seedGenres() {
   // Group by writes and genre_1 to extract unique combinations
   const genre1Map = new Map<
     string,
-    Map<string, { order: number; genre2s: Set<string> }>
+    Map<
+      string,
+      {
+        order: number;
+        genre2s: Map<
+          string,
+          {
+            readingGrade?: string;
+            chapterCount?: string;
+            wordCount?: string;
+            price?: string;
+          }
+        >;
+      }
+    >
   >();
 
-  rows.forEach((row, index) => {
+  rows.forEach((row) => {
     if (!row.genre_1) return; // Skip rows without genre_1
 
     if (!genre1Map.has(row.writes)) {
@@ -54,12 +82,18 @@ async function seedGenres() {
     if (!genre1s.has(row.genre_1)) {
       genre1s.set(row.genre_1, {
         order: genre1s.size,
-        genre2s: new Set(),
+        genre2s: new Map(),
       });
     }
 
     if (row.genre_2) {
-      genre1s.get(row.genre_1)!.genre2s.add(row.genre_2);
+      const genre2Data = {
+        readingGrade: row.reading_grade,
+        chapterCount: row.chapter_count,
+        wordCount: row.word_count,
+        price: row.price,
+      };
+      genre1s.get(row.genre_1)!.genre2s.set(row.genre_2, genre2Data);
     }
   });
 
@@ -75,16 +109,9 @@ async function seedGenres() {
     console.log(`\n📝 Processing "${writes}" category...`);
 
     for (const [genre1Name, { order, genre2s }] of genre1s.entries()) {
-      // Create or get Genre1
-      const genre1 = await prisma.genre1.upsert({
-        where: {
-          writes_name: {
-            writes,
-            name: genre1Name,
-          },
-        },
-        update: {},
-        create: {
+      // Create Genre1
+      const genre1 = await prisma.genre1.create({
+        data: {
           name: genre1Name,
           writes,
           order,
@@ -95,18 +122,15 @@ async function seedGenres() {
 
       // Create Genre2 entries
       let genre2Order = 0;
-      for (const genre2Name of Array.from(genre2s)) {
-        await prisma.genre2.upsert({
-          where: {
-            genre1Id_name: {
-              genre1Id: genre1.id,
-              name: genre2Name,
-            },
-          },
-          update: {},
-          create: {
+      for (const [genre2Name, genre2Data] of genre2s.entries()) {
+        await prisma.genre2.create({
+          data: {
             name: genre2Name,
             genre1Id: genre1.id,
+            readingGrade: genre2Data.readingGrade || null,
+            chapterCount: genre2Data.chapterCount || null,
+            wordCount: genre2Data.wordCount || null,
+            price: genre2Data.price || null,
             order: genre2Order++,
           },
         });

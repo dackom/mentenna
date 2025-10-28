@@ -85,6 +85,10 @@ export function GenreTable({
             <TableHead className="w-12"></TableHead>
             <TableHead>Primary Genre</TableHead>
             <TableHead className="w-32">Secondary Genres</TableHead>
+            <TableHead className="w-24">Reading Grade</TableHead>
+            <TableHead className="w-24">Chapters</TableHead>
+            <TableHead className="w-24">Words</TableHead>
+            <TableHead className="w-24">Price</TableHead>
             <TableHead className="w-32 text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -110,6 +114,10 @@ export function GenreTable({
                 </TableCell>
                 <TableCell className="font-medium">{genre1.name}</TableCell>
                 <TableCell>{genre1.genre2Options.length}</TableCell>
+                <TableCell></TableCell>
+                <TableCell></TableCell>
+                <TableCell></TableCell>
+                <TableCell></TableCell>
                 <TableCell className="text-right">
                   <div className="flex gap-1 justify-end">
                     <Button
@@ -155,6 +163,18 @@ export function GenreTable({
                       {genre2.name}
                     </TableCell>
                     <TableCell></TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {genre2.readingGrade || "-"}
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {genre2.chapterCount || "-"}
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {genre2.wordCount || "-"}
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {genre2.price || "-"}
+                    </TableCell>
                     <TableCell className="text-right">
                       <div className="flex gap-1 justify-end">
                         <Button

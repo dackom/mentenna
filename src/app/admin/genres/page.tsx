@@ -111,6 +111,10 @@ export default function GenresPage() {
   const handleCreateGenre2 = async (data: {
     name: string;
     genre1Id: string;
+    readingGrade?: string;
+    chapterCount?: string;
+    wordCount?: string;
+    price?: string;
   }) => {
     try {
       const response = await fetch("/api/admin/genres/genre2", {
@@ -130,7 +134,16 @@ export default function GenresPage() {
     }
   };
 
-  const handleUpdateGenre2 = async (id: string, data: { name: string }) => {
+  const handleUpdateGenre2 = async (
+    id: string,
+    data: {
+      name: string;
+      readingGrade?: string;
+      chapterCount?: string;
+      wordCount?: string;
+      price?: string;
+    }
+  ) => {
     try {
       const response = await fetch(`/api/admin/genres/genre2/${id}`, {
         method: "PATCH",
@@ -294,8 +307,22 @@ export default function GenresPage() {
             <Genre2Form
               defaultValues={
                 dialog.mode === "edit"
-                  ? { name: dialog.data.name, genre1Id: dialog.data.genre1Id }
-                  : { name: "", genre1Id: dialog.data.genre1Id }
+                  ? {
+                      name: dialog.data.name,
+                      genre1Id: dialog.data.genre1Id,
+                      readingGrade: dialog.data.readingGrade || "",
+                      chapterCount: dialog.data.chapterCount || "",
+                      wordCount: dialog.data.wordCount || "",
+                      price: dialog.data.price || "",
+                    }
+                  : {
+                      name: "",
+                      genre1Id: dialog.data.genre1Id,
+                      readingGrade: "",
+                      chapterCount: "",
+                      wordCount: "",
+                      price: "",
+                    }
               }
               genre1Options={genres.map((g) => ({
                 id: g.id,

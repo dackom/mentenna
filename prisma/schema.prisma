@@ -130,13 +130,17 @@ model Genre1 {
 }
 
 model Genre2 {
-  id        String   @id @default(uuid())
-  name      String
-  genre1Id  String
-  genre1    Genre1   @relation(fields: [genre1Id], references: [id], onDelete: Cascade)
-  order     Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String   @id @default(uuid())
+  name         String
+  genre1Id     String
+  genre1       Genre1   @relation(fields: [genre1Id], references: [id], onDelete: Cascade)
+  readingGrade String?
+  chapterCount String?
+  wordCount    String?
+  price        String?
+  order        Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
   
   writingGenres AuthorWritingGenre[]
 

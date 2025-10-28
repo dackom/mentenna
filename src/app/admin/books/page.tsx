@@ -1,5 +1,6 @@
-// import { Button } from "@/components/ui/button";
-// import { PlusIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { PlusIcon } from "lucide-react";
+import Link from "next/link";
 
 export default function BooksPage() {
   return (
@@ -11,10 +12,12 @@ export default function BooksPage() {
             Generate and manage books
           </p>
         </div>
-        {/* <Button>
-          <PlusIcon />
-          Add Book
-        </Button> */}
+        <Link href="/admin/books/new">
+          <Button>
+            <PlusIcon />
+            Generate Book
+          </Button>
+        </Link>
       </div>
     </div>
   );

@@ -28,7 +28,15 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, genre1Id, order } = body;
+    const {
+      name,
+      genre1Id,
+      order,
+      readingGrade,
+      chapterCount,
+      wordCount,
+      price,
+    } = body;
 
     if (!name || !genre1Id) {
       return NextResponse.json(
@@ -37,7 +45,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const genre = await createGenre2({ name, genre1Id, order });
+    const genre = await createGenre2({
+      name,
+      genre1Id,
+      order,
+      readingGrade,
+      chapterCount,
+      wordCount,
+      price,
+    });
 
     return NextResponse.json({ genre }, { status: 201 });
   } catch (error) {

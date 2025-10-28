@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { Genre1, Genre2 } from "@prisma/client";
+import { Genre1 } from "@prisma/client";
 
 // Genre1 Operations
 export async function getGenre1ByWrites(writes: string) {
@@ -95,6 +95,10 @@ export async function createGenre2(data: {
   name: string;
   genre1Id: string;
   order?: number;
+  readingGrade?: string;
+  chapterCount?: string;
+  wordCount?: string;
+  price?: string;
 }) {
   // Get the highest order number for this genre1
   if (data.order === undefined) {
@@ -112,7 +116,14 @@ export async function createGenre2(data: {
 
 export async function updateGenre2(
   id: string,
-  data: Partial<Pick<Genre2, "name" | "order">>
+  data: Partial<{
+    name: string;
+    order: number;
+    readingGrade: string;
+    chapterCount: string;
+    wordCount: string;
+    price: string;
+  }>
 ) {
   return await prisma.genre2.update({
     where: { id },

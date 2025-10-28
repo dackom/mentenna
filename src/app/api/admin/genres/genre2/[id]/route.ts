@@ -30,11 +30,15 @@ export async function PATCH(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { name, order } = body;
+    const { name, order, readingGrade, chapterCount, wordCount, price } = body;
 
     const updateData: Parameters<typeof updateGenre2>[1] = {};
     if (name !== undefined) updateData.name = name;
     if (order !== undefined) updateData.order = order;
+    if (readingGrade !== undefined) updateData.readingGrade = readingGrade;
+    if (chapterCount !== undefined) updateData.chapterCount = chapterCount;
+    if (wordCount !== undefined) updateData.wordCount = wordCount;
+    if (price !== undefined) updateData.price = price;
 
     const genre = await updateGenre2(id, updateData);
 

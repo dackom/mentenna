@@ -15,6 +15,11 @@ const getPageName = (url: string) => {
   if (url === "/admin/authors") return "Authors";
   if (url === "/admin/genres") return "Genres";
   if (url === "/admin/books") return "Books";
+  if (url === "/admin/books/new") return "Generate Book";
+  if (url === "/admin/personalities") return "Personalities";
+  if (url === "/admin/writing-styles") return "Writing Styles";
+  if (url === "/admin/open-router") return "Open Router Costs";
+  if (url === "/admin/users") return "Users";
   return "";
 };
 

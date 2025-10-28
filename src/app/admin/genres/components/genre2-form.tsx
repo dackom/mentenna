@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -19,6 +19,10 @@ import { Loader2Icon } from "lucide-react";
 const genre2Schema = z.object({
   name: z.string().min(1, "Name is required"),
   genre1Id: z.string().uuid("Invalid Genre1 selection"),
+  readingGrade: z.string().optional(),
+  chapterCount: z.string().optional(),
+  wordCount: z.string().optional(),
+  price: z.string().optional(),
 });
 
 type Genre2FormData = z.infer<typeof genre2Schema>;
@@ -51,6 +55,10 @@ export function Genre2Form({
     defaultValues: defaultValues || {
       name: "",
       genre1Id: "",
+      readingGrade: "",
+      chapterCount: "",
+      wordCount: "",
+      price: "",
     },
   });
 
@@ -117,6 +125,54 @@ export function Genre2Form({
         />
         {errors.name && (
           <p className="text-sm text-red-500">{errors.name.message}</p>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="readingGrade">Reading Grade</Label>
+        <Input
+          id="readingGrade"
+          {...register("readingGrade")}
+          placeholder="e.g., 9–12, 6-9, 4-College"
+        />
+        {errors.readingGrade && (
+          <p className="text-sm text-red-500">{errors.readingGrade.message}</p>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="chapterCount">Chapter Count</Label>
+        <Input
+          id="chapterCount"
+          {...register("chapterCount")}
+          placeholder="e.g., 10-30, 15-40"
+        />
+        {errors.chapterCount && (
+          <p className="text-sm text-red-500">{errors.chapterCount.message}</p>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="wordCount">Word Count</Label>
+        <Input
+          id="wordCount"
+          {...register("wordCount")}
+          placeholder="e.g., 40000-80000, 70000-120000"
+        />
+        {errors.wordCount && (
+          <p className="text-sm text-red-500">{errors.wordCount.message}</p>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="price">Price</Label>
+        <Input
+          id="price"
+          {...register("price")}
+          placeholder="e.g., $4.99–$7.99, $5.99–$9.99"
+        />
+        {errors.price && (
+          <p className="text-sm text-red-500">{errors.price.message}</p>
         )}
       </div>
 
