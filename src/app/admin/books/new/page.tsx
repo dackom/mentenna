@@ -2,13 +2,7 @@
 
 import { useState } from "react";
 import useSWR from "swr";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -18,7 +12,6 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Separator } from "@/components/ui/separator";
 import type {
   Author,
   Genre1,
@@ -28,13 +21,13 @@ import type {
   AuthorWritingGenre,
   AuthorPersonality,
 } from "@prisma/client";
-import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ChevronDownIcon, ChevronUpIcon } from "lucide-react";
+import GenerativeTextarea from "@/components/generative-textarea";
 
 // Type for Author with all relations included (matches API response)
 type AuthorWithRelations = Author & {
@@ -56,6 +49,22 @@ export default function BooksPage() {
   const [selectedAuthorId, setSelectedAuthorId] = useState<string>("");
   const [expandAuthorDetails, setExpandAuthorDetails] =
     useState<boolean>(false);
+  const [selectedGenreId, setSelectedGenreId] = useState<string | null>(null);
+  const [chapters, setChapters] = useState<number>(10);
+  const [wordCountTotal, setWordCountTotal] = useState<number>(0);
+  const [readingGrade, setReadingGrade] = useState<string>("");
+  const [subgenre, setSubgenre] = useState<string>(
+    "Boundaries for women withing traditional family systems"
+  );
+  const [microtopic, setMicrotopic] = useState<string>(
+    "Muslim culture, hierarchy, religion, law, strategies, tactics, "
+  );
+  // const [subgenre, setSubgenre] = useState<string>("");
+  // const [microtopic, setMicrotopic] = useState<string>("");
+  const [selectedGenre, setSelectedGenre] = useState<any | null>(null);
+  const [readerAvatar, setReaderAvatar] = useState<string>("");
+  const [bookTitle, setBookTitle] = useState<string>("");
+  const [bookSynopsis, setBookSynopsis] = useState<string>("");
 
   const {
     data: authors,
@@ -63,7 +72,6 @@ export default function BooksPage() {
     isLoading,
   } = useSWR<AuthorWithRelations[]>("/api/admin/authors", fetcher);
 
-  console.log(authors);
   const selectedAuthor = authors?.find(
     (author) => author.id === selectedAuthorId
   );
@@ -184,12 +192,12 @@ export default function BooksPage() {
 
                   {/* Writing Genres */}
                   {selectedAuthor.writingGenres.length > 0 && (
-                    <div>
-                      <div className="space-y-3">
+                    <div className="">
+                      <div className="space-y-2">
                         {selectedAuthor.writingGenres.map((genre, index) => (
-                          <div key={index} className="">
+                          <div key={index} className="border p-2 rounded-md">
                             <h3 className="text-lg font-semibold mb-3">
-                              Writes: {genre.writes}
+                              {genre.writes}
                             </h3>
                             <div className="flex flex-wrap gap-2 mb-2">
                               {genre.genre1 && (
@@ -264,51 +272,204 @@ export default function BooksPage() {
               <CardContent>
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="book-title">Subgenre</Label>
-                    <Input id="subgenre" placeholder="Subgenre" />
+                    <Label htmlFor="book-title">Pick a genre:</Label>
+                    {selectedAuthor.writingGenres.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {selectedAuthor.writingGenres.map((genre, index) => (
+                          <div
+                            key={index}
+                            className={cn(
+                              "border p-2 rounded-md cursor-pointer",
+                              selectedGenreId === genre.id
+                                ? "bg-primary/80 text-primary-foreground"
+                                : ""
+                            )}
+                            onClick={() => {
+                              setSelectedGenreId(genre.id);
+                              setChapters(
+                                parseInt(
+                                  genre.genre2?.chapterCount?.split("-")[0] ||
+                                    "10"
+                                )
+                              );
+                              setWordCountTotal(
+                                parseInt(
+                                  genre.genre2?.wordCount?.split("-")[0] ||
+                                    "10000"
+                                )
+                              );
+                              setReadingGrade(
+                                genre.genre2?.readingGrade || "N/A"
+                              );
+                              setSelectedGenre(genre);
+                            }}
+                          >
+                            <h3 className="text-lg font-semibold mb-3">
+                              {genre.writes}
+                            </h3>
+                            <div className="flex flex-wrap gap-2 mb-2">
+                              {genre.genre1 && (
+                                <Badge>{genre.genre1.name}</Badge>
+                              )}
+                              {genre.genre2 && (
+                                <Badge variant="secondary">
+                                  {genre.genre2.name}
+                                </Badge>
+                              )}
+                              {genre.genre_3 && (
+                                <Badge variant="outline">{genre.genre_3}</Badge>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="book-title">Microtopic / tag</Label>
-                    <Input id="microtopic" placeholder="Microtopic / tag" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="book-title">Reader avatar</Label>
-                    <Textarea id="reader-avatar" placeholder="Reader avatar" />
-                  </div>
-                  <div className="flex justify-evenly gap-4">
+                  <div className="flex gap-4">
                     <div className="space-y-2 flex-1">
-                      <Label htmlFor="book-title">Chapters</Label>
-                      <Slider id="chapters" min={1} max={20} step={1} />
-                    </div>
-                    <div className="space-y-2 flex-1">
-                      <Label htmlFor="book-title">Word count per chapter</Label>
-                      <Slider id="word-count" min={500} max={5000} step={100} />
-                    </div>
-                    <div className="space-y-2 flex-1">
-                      <Label htmlFor="book-title">Word count total</Label>
-                      <Slider
-                        id="word-count-total"
-                        min={1000}
-                        max={100000}
-                        step={1000}
+                      <Label htmlFor="book-title">Subgenre</Label>
+                      <Input
+                        id="subgenre"
+                        placeholder="Subgenre"
+                        value={subgenre}
+                        onChange={(e) => setSubgenre(e.target.value)}
                       />
                     </div>
+                    <div className="space-y-2 flex-1">
+                      <Label htmlFor="book-title">Microtopic / tag</Label>
+                      <Input
+                        id="microtopic"
+                        placeholder="Microtopic / tag"
+                        value={microtopic}
+                        onChange={(e) => setMicrotopic(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2 w-1/4">
+                      <Label htmlFor="book-title">Reading grade</Label>
+                      <Input
+                        id="reading-grade"
+                        placeholder="Reading grade"
+                        value={readingGrade}
+                        onChange={(e) => setReadingGrade(e.target.value)}
+                      />
+                      <span className="text-muted-foreground text-sm">
+                        (suggested:{" "}
+                        {selectedGenre?.genre2?.readingGrade || "N/A"})
+                      </span>
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="reading-grade">Reading grade</Label>
-                    <Select>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select reading grade" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="1">1</SelectItem>
-                        <SelectItem value="2">2</SelectItem>
-                        <SelectItem value="3">3</SelectItem>
-                        <SelectItem value="4">4</SelectItem>
-                        <SelectItem value="5">5</SelectItem>
-                      </SelectContent>
-                    </Select>
+
+                  <div className="flex justify-evenly gap-4">
+                    <div className="space-y-2 flex-1">
+                      <Label htmlFor="book-title">Chapters - {chapters}</Label>
+                      <Slider
+                        id="chapters"
+                        min={5}
+                        max={60}
+                        step={1}
+                        value={[chapters]}
+                        onValueChange={(value) => setChapters(value[0])}
+                      />
+                      <span className="text-muted-foreground text-sm">
+                        (suggested:{" "}
+                        {selectedGenre?.genre2?.chapterCount || "N/A"})
+                      </span>
+                    </div>
+                    <div className="space-y-2 flex-1">
+                      <Label htmlFor="book-title">
+                        Word count total - {wordCountTotal}
+                      </Label>
+                      <Slider
+                        id="word-count-total"
+                        min={10000}
+                        max={200000}
+                        step={1000}
+                        value={[wordCountTotal]}
+                        onValueChange={(value) => setWordCountTotal(value[0])}
+                      />
+                      <span className="text-muted-foreground text-sm">
+                        (suggested: {selectedGenre?.genre2?.wordCount || "N/A"})
+                      </span>
+                    </div>
                   </div>
+                  <GenerativeTextarea
+                    value={readerAvatar}
+                    setValue={setReaderAvatar}
+                    label="Reader avatar"
+                    prompt={`Create an ideal very specific reader avatar based on:
+
+- AI writer avatar personality: ${selectedAuthor.ai_persona}
+
+- Writing style: ${selectedGenre?.writes}
+
+- Primary genre: ${selectedGenre?.genre1?.name} 
+
+- Secondary genre: ${selectedGenre?.genre2?.name}
+
+- Subgenre: ${subgenre}
+
+- Microtopic / tag: ${microtopic}
+
+- Reading grade: ${readingGrade}
+
+With an idea who would be the absolute best fit for reading this book so that the entire book and direct response copy on the book sales page is written specifically for them and they can easily find it and identify.
+
+Return only the avatar, no other text.
+`}
+                  />
+
+                  <GenerativeTextarea
+                    value={bookTitle}
+                    setValue={setBookTitle}
+                    label="Book title"
+                    prompt={`Create an appealing, click bait style title of the book that this reader avatar will immediately identify with and desire to buy based on: 
+
+- AI writer avatar personality: ${selectedAuthor.ai_persona}
+
+- Reader avatar ${readerAvatar}
+
+- Writing style ${selectedGenre?.writes}
+
+- Primary genre ${selectedGenre?.genre1?.name}
+
+- Secondary genre ${selectedGenre?.genre2?.name}
+
+- Subgenre ${subgenre}
+
+- Microtopic ${microtopic}
+
+- Reading grade ${readingGrade}
+
+Return only the title, no other text.
+`}
+                  />
+
+                  <GenerativeTextarea
+                    value={bookSynopsis}
+                    setValue={setBookSynopsis}
+                    label="Book synopsis"
+                    prompt={`Create a book synopsis that acts as a direct responce copy, directed to the reader avatar directly with an intention of them buying the book immediately, that they will quickly identify with, giving them a sense of urgency to buy the book. In the synopsis, have a SEO optimization in mind and write in a way that optimizes for all search intents connected to this writer avatar, book topic etc. and possible long tale phrases around those terms for:
+
+- Writer avatar: ${selectedAuthor.ai_persona}
+
+- Writing style: ${selectedGenre?.writes}
+
+- Primary genre: ${selectedGenre?.genre1?.name}
+
+- Secondary genre: ${selectedGenre?.genre2?.name}
+
+- Subgenre: ${subgenre}
+
+- Microtopic: ${microtopic}
+
+- Reader avatar: ${readerAvatar}
+
+- Book title: ${bookTitle}
+
+Return only the synopsis, no other text.
+
+`}
+                  />
                 </div>
               </CardContent>
             </Card>
