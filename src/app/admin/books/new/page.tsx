@@ -53,14 +53,14 @@ export default function BooksPage() {
   const [chapters, setChapters] = useState<number>(10);
   const [wordCountTotal, setWordCountTotal] = useState<number>(0);
   const [readingGrade, setReadingGrade] = useState<string>("");
-  const [subgenre, setSubgenre] = useState<string>(
-    "Boundaries for women withing traditional family systems"
-  );
-  const [microtopic, setMicrotopic] = useState<string>(
-    "Muslim culture, hierarchy, religion, law, strategies, tactics, "
-  );
-  // const [subgenre, setSubgenre] = useState<string>("");
-  // const [microtopic, setMicrotopic] = useState<string>("");
+  // const [subgenre, setSubgenre] = useState<string>(
+  //   "Boundaries for women withing traditional family systems"
+  // );
+  // const [microtopic, setMicrotopic] = useState<string>(
+  //   "Muslim culture, hierarchy, religion, law, strategies, tactics, "
+  // );
+  const [subgenre, setSubgenre] = useState<string>("");
+  const [microtopic, setMicrotopic] = useState<string>("");
   const [selectedGenre, setSelectedGenre] = useState<any | null>(null);
   const [readerAvatar, setReaderAvatar] = useState<string>("");
   const [bookTitle, setBookTitle] = useState<string>("");
