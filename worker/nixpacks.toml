@@ -1,22 +1,23 @@
 [phases.setup]
 nixPkgs = [
-  "bun",
   "nodejs_20",
+]
+
+[phases.build]
+cmds = [
+  # Copy prisma schema from parent directory (when available in build context)
+  # If parent dir isn't available, we'll need to handle it differently
+  "if [ -d ../prisma ]; then cp -r ../prisma ./prisma-parent || true; fi",
 ]
 
 [phases.install]
 cmds = [
-  # Install root dependencies (needed for Prisma CLI and schema)
-  # Root uses bun (has bun.lock)
-  "cd .. && bun install",
-  # Install worker dependencies (worker uses npm)
+  # Install worker dependencies (includes Prisma in devDependencies)
   "npm install",
-  # Generate Prisma client (must be done after installing root deps)
-  "cd .. && bunx prisma generate",
+  # Generate Prisma client
+  # Try to use prisma from parent if available, otherwise use local
+  "if [ -d ./prisma-parent ]; then npx prisma generate --schema=./prisma-parent/schema.prisma || npx prisma generate; else npx prisma generate --schema=../prisma/schema.prisma || echo 'Prisma schema not found - make sure to configure Root Directory correctly'; fi",
 ]
-
-[phases.build]
-cmds = []
 
 [start]
 cmd = "npm run start"
