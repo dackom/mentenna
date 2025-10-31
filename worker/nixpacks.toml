@@ -3,21 +3,20 @@ nixPkgs = [
   "nodejs_20",
 ]
 
-[phases.build]
-cmds = [
-  # Copy prisma schema from parent directory (when available in build context)
-  # If parent dir isn't available, we'll need to handle it differently
-  "if [ -d ../prisma ]; then cp -r ../prisma ./prisma-parent || true; fi",
-]
-
 [phases.install]
 cmds = [
+  # Copy prisma schema into worker directory so it's available during install
+  # This is needed because when Root Directory is set to /worker, parent isn't copied
+  # Try to copy from parent directory (available during git clone but before Docker COPY)
+  "if [ -d ../prisma ]; then cp -r ../prisma . && echo 'Prisma schema copied from parent'; elif [ -d ../../prisma ]; then cp -r ../../prisma . && echo 'Prisma schema copied from repo root'; else echo 'Warning: ../prisma not found in expected location'; fi",
   # Install worker dependencies (includes Prisma in devDependencies)
   "npm install",
-  # Generate Prisma client
-  # Try to use prisma from parent if available, otherwise use local
-  "if [ -d ./prisma-parent ]; then npx prisma generate --schema=./prisma-parent/schema.prisma || npx prisma generate; else npx prisma generate --schema=../prisma/schema.prisma || echo 'Prisma schema not found - make sure to configure Root Directory correctly'; fi",
+  # Generate Prisma client using the copied schema or from parent if available
+  "if [ -f ./prisma/schema.prisma ]; then npx prisma generate --schema=./prisma/schema.prisma && echo 'Prisma client generated from ./prisma'; elif [ -f ../prisma/schema.prisma ]; then npx prisma generate --schema=../prisma/schema.prisma && echo 'Prisma client generated from ../prisma'; else echo 'Error: Prisma schema not found. Tried ./prisma/schema.prisma and ../prisma/schema.prisma'; exit 1; fi",
 ]
+
+[phases.build]
+cmds = []
 
 [start]
 cmd = "npm run start"

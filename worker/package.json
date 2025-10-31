@@ -4,11 +4,12 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "generate": "cd .. && npx prisma generate",
+    "generate": "npx prisma generate --schema=./prisma/schema.prisma || npx prisma generate --schema=../prisma/schema.prisma || (echo 'Prisma schema not found' && exit 1)",
     "dev": "npm run generate && tsx watch src/index.ts",
     "start": "npm run generate && tsx src/index.ts"
   },
   "dependencies": {
+    "@prisma/client": "^6.17.1",
     "dotenv": "^16.4.5",
     "uuid": "^13.0.0"
   },
