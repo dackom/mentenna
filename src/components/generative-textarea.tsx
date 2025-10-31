@@ -168,6 +168,7 @@ export default function GenerativeTextarea({
                 placeholder={
                   "Enter a prompt to generate a response. This will be used to generate the response."
                 }
+                className="max-h-[50vh] overflow-y-auto"
               />
               Choose models:
               <div className="flex flex-col gap-1">

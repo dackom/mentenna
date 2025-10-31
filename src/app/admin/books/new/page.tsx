@@ -672,7 +672,7 @@ Return only the synopsis, no other text.
                       <div>
                         <Label>Final book prompt:</Label>
                         <Textarea
-                          className="mt-2"
+                          className="mt-2 max-h-[50vh] overflow-y-auto"
                           value={`Write a book as if it was written by 
 
 - AI writer avatar's personality: ${selectedAuthor.ai_persona}
