@@ -1,8 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import useSWR from "swr";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardFooter,
+} from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -28,6 +35,18 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ChevronDownIcon, ChevronUpIcon } from "lucide-react";
 import GenerativeTextarea from "@/components/generative-textarea";
+import { saveBookDraft, startBookGeneration } from "../actions";
+import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { AVAILABLE_MODELS } from "@/config/models";
 
 // Type for Author with all relations included (matches API response)
 type AuthorWithRelations = Author & {
@@ -45,7 +64,9 @@ type AuthorWithRelations = Author & {
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
-export default function BooksPage() {
+export default function GenerateBooksPage() {
+  const searchParams = useSearchParams();
+  const [draftId, setDraftId] = useState<string | null>(null);
   const [selectedAuthorId, setSelectedAuthorId] = useState<string>("");
   const [expandAuthorDetails, setExpandAuthorDetails] =
     useState<boolean>(false);
@@ -53,19 +74,19 @@ export default function BooksPage() {
   const [chapters, setChapters] = useState<number>(10);
   const [wordCountTotal, setWordCountTotal] = useState<number>(0);
   const [readingGrade, setReadingGrade] = useState<string>("");
-  // const [subgenre, setSubgenre] = useState<string>(
-  //   "Boundaries for women withing traditional family systems"
-  // );
-  // const [microtopic, setMicrotopic] = useState<string>(
-  //   "Muslim culture, hierarchy, religion, law, strategies, tactics, "
-  // );
   const [subgenre, setSubgenre] = useState<string>("");
   const [microtopic, setMicrotopic] = useState<string>("");
   const [selectedGenre, setSelectedGenre] = useState<any | null>(null);
   const [readerAvatar, setReaderAvatar] = useState<string>("");
   const [bookTitle, setBookTitle] = useState<string>("");
   const [bookSynopsis, setBookSynopsis] = useState<string>("");
-
+  const [selectedModel, setSelectedModel] = useState<string>(
+    AVAILABLE_MODELS[0]?.id || ""
+  );
+  const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [isGenerateDialogOpen, setIsGenerateDialogOpen] = useState(false);
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const router = useRouter();
   const {
     data: authors,
     error,
@@ -75,6 +96,134 @@ export default function BooksPage() {
   const selectedAuthor = authors?.find(
     (author) => author.id === selectedAuthorId
   );
+
+  // Save draft function
+  const saveDraft = useCallback(
+    async (immediate = false) => {
+      if (!selectedAuthorId) return;
+
+      // Clear existing timeout
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+
+      const performSave = async () => {
+        setIsSaving(true);
+        try {
+          const result = await saveBookDraft({
+            draftId,
+            authorId: selectedAuthorId,
+            selectedGenreId,
+            chapters,
+            wordCountTotal,
+            readingGrade,
+            subgenre,
+            microtopic,
+            readerAvatar,
+            bookTitle,
+            bookSynopsis,
+          });
+
+          if (result.error) {
+            console.error("Error saving draft:", result.error);
+            toast.error("Failed to save draft");
+          } else if (result.data?.id) {
+            setDraftId(result.data.id);
+            if (immediate) {
+              toast.success("Draft saved successfully!");
+            }
+          }
+        } finally {
+          setIsSaving(false);
+        }
+      };
+
+      if (immediate) {
+        await performSave();
+        return;
+      }
+
+      // Debounce save by 500ms
+      saveTimeoutRef.current = setTimeout(performSave, 500);
+    },
+    [
+      draftId,
+      selectedAuthorId,
+      selectedGenreId,
+      chapters,
+      wordCountTotal,
+      readingGrade,
+      subgenre,
+      microtopic,
+      readerAvatar,
+      bookTitle,
+      bookSynopsis,
+    ]
+  );
+
+  // Load draft from query param
+  useEffect(() => {
+    const draftIdFromQuery = searchParams.get("id");
+    if (draftIdFromQuery && draftIdFromQuery !== draftId) {
+      fetch(`/api/admin/book-drafts/${draftIdFromQuery}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data && !data.error) {
+            setDraftId(data.id);
+            setSelectedAuthorId(data.authorId);
+            setSelectedGenreId(data.selectedGenreId);
+            setChapters(data.chapters);
+            setWordCountTotal(data.wordCountTotal);
+            setReadingGrade(data.readingGrade || "");
+            setSubgenre(data.subgenre || "");
+            setMicrotopic(data.microtopic || "");
+            setReaderAvatar(data.readerAvatar || "");
+            setBookTitle(data.bookTitle || "");
+            setBookSynopsis(data.bookSynopsis || "");
+          }
+        })
+        .catch((error) => {
+          console.error("Error loading draft:", error);
+        });
+    }
+  }, [searchParams, draftId]);
+
+  // Update selectedGenre when genre is selected
+  useEffect(() => {
+    if (selectedAuthor && selectedGenreId) {
+      const genre = selectedAuthor.writingGenres.find(
+        (g) => g.id === selectedGenreId
+      );
+      if (genre) {
+        setSelectedGenre(genre);
+      }
+    }
+  }, [selectedAuthor, selectedGenreId]);
+
+  // Auto-save on field changes
+  useEffect(() => {
+    if (selectedAuthorId) {
+      saveDraft();
+    }
+    // Cleanup timeout on unmount
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, [
+    selectedAuthorId,
+    selectedGenreId,
+    chapters,
+    wordCountTotal,
+    readingGrade,
+    subgenre,
+    microtopic,
+    readerAvatar,
+    bookTitle,
+    bookSynopsis,
+    saveDraft,
+  ]);
 
   if (isLoading) {
     return (
@@ -395,6 +544,7 @@ export default function BooksPage() {
                   <GenerativeTextarea
                     value={readerAvatar}
                     setValue={setReaderAvatar}
+                    onAccept={saveDraft}
                     label="Reader avatar"
                     prompt={`Create an ideal very specific reader avatar based on:
 
@@ -421,6 +571,7 @@ Return only the avatar, no other text.
                   <GenerativeTextarea
                     value={bookTitle}
                     setValue={setBookTitle}
+                    onAccept={saveDraft}
                     label="Book title"
                     prompt={`Create an appealing, click bait style title of the book that this reader avatar will immediately identify with and desire to buy based on: 
 
@@ -447,6 +598,7 @@ Return only the title, no other text.
                   <GenerativeTextarea
                     value={bookSynopsis}
                     setValue={setBookSynopsis}
+                    onAccept={saveDraft}
                     label="Book synopsis"
                     prompt={`Create a book synopsis that acts as a direct responce copy, directed to the reader avatar directly with an intention of them buying the book immediately, that they will quickly identify with, giving them a sense of urgency to buy the book. In the synopsis, have a SEO optimization in mind and write in a way that optimizes for all search intents connected to this writer avatar, book topic etc. and possible long tale phrases around those terms for:
 
@@ -472,6 +624,115 @@ Return only the synopsis, no other text.
                   />
                 </div>
               </CardContent>
+              <CardFooter className="border-t pt-6 flex justify-between">
+                <Button
+                  onClick={() => saveDraft(true)}
+                  disabled={!selectedAuthorId || isSaving}
+                  variant="outline"
+                >
+                  {isSaving ? "Saving..." : "Save Draft"}
+                </Button>
+                <Dialog
+                  open={isGenerateDialogOpen}
+                  onOpenChange={setIsGenerateDialogOpen}
+                >
+                  <DialogTrigger>
+                    <Button>Generate Book</Button>
+                  </DialogTrigger>
+                  <DialogContent className="w-[90vw] !max-w-[90vw] max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle>{bookTitle}</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="model-select">Select Model</Label>
+                        <Select
+                          value={selectedModel}
+                          onValueChange={setSelectedModel}
+                        >
+                          <SelectTrigger id="model-select" className="mt-2">
+                            <SelectValue placeholder="Select a model" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {AVAILABLE_MODELS.map((model) => (
+                              <SelectItem key={model.id} value={model.id}>
+                                <div className="flex flex-col">
+                                  <span className="font-medium">
+                                    {model.name}
+                                  </span>
+                                  <span className="text-xs text-muted-foreground">
+                                    {model.description}
+                                  </span>
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label>Final book prompt:</Label>
+                        <Textarea
+                          className="mt-2"
+                          value={`Write a book as if it was written by 
+
+- AI writer avatar's personality: ${selectedAuthor.ai_persona}
+
+- Book title: ${bookTitle}
+
+- Book synopsis: ${bookSynopsis}
+
+- Using a writing style: ${selectedGenre?.writes}
+
+- Using a (Primary genre): ${selectedGenre?.genre1?.name} 
+
+- And a (Secondary genre): ${selectedGenre?.genre2?.name} 
+
+- Focus on (Subgenre): ${subgenre}
+
+- Addressing topics like: (Microtopic/tag): ${microtopic} 
+
+- With a Reader avatar in mind: ${readerAvatar}
+
+- Writing in a way that is understandable for a Grade ${readingGrade} level  
+
+- And generate a book that will have ${chapters} chapters
+
+- Each chapter consisting of a minimum of ${wordCountTotal / chapters} words
+
+- And a total word count of minimum ${wordCountTotal} words`}
+                        />
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button
+                        onClick={async () => {
+                          if (!draftId) {
+                            toast.error("Please save the draft first");
+                            return;
+                          }
+                          if (!selectedModel) {
+                            toast.error("Please select a model");
+                            return;
+                          }
+                          const result = await startBookGeneration(
+                            draftId,
+                            selectedModel
+                          );
+                          if (result.error) {
+                            toast.error(result.error);
+                          } else {
+                            toast.success("Book generation started!");
+                            setIsGenerateDialogOpen(false);
+                            router.push(`/admin/books`);
+                          }
+                        }}
+                      >
+                        Generate Book
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </CardFooter>
             </Card>
           </>
         )}

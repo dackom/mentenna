@@ -1,0 +1,22 @@
+[phases.setup]
+nixPkgs = [
+  "bun",
+  "nodejs_20",
+]
+
+[phases.install]
+cmds = [
+  # Install root dependencies (needed for Prisma CLI and schema)
+  # Root uses bun (has bun.lock)
+  "cd .. && bun install",
+  # Install worker dependencies (worker uses npm)
+  "npm install",
+  # Generate Prisma client (must be done after installing root deps)
+  "cd .. && bunx prisma generate",
+]
+
+[phases.build]
+cmds = []
+
+[start]
+cmd = "npm run start"

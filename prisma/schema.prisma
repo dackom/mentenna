@@ -9,20 +9,22 @@ datasource db {
 }
 
 model User {
-  id            String    @id
+  id            String       @id
   name          String
   email         String
-  emailVerified Boolean   @default(false)
+  emailVerified Boolean      @default(false)
   image         String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @default(now()) @updatedAt
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @default(now()) @updatedAt
   role          String?
-  banned        Boolean?  @default(false)
+  banned        Boolean?     @default(false)
   banReason     String?
   banExpires    DateTime?
   phone         String?
   sessions      Session[]
   accounts      Account[]
+  bookDrafts    BookDraft[]
+  books         Book[]
 
   @@unique([email])
   @@map("user")
@@ -92,6 +94,8 @@ model Author {
   createdAt          DateTime             @default(now())
   writingGenres      AuthorWritingGenre[]
   personalities      AuthorPersonality[]
+  bookDrafts         BookDraft[]
+  books              Book[]
 
   @@map("authors")
 }
@@ -188,4 +192,85 @@ model WritingStyle {
   authorsAsStyle2 Author[] @relation("AuthorWritingStyle2")
 
   @@map("writing_styles")
+}
+
+model BookDraft {
+  id              String   @id @default(uuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  authorId        String
+  author          Author   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  selectedGenreId String?
+  chapters        Int
+  wordCountTotal  Int
+  readingGrade    String
+  subgenre        String
+  microtopic      String
+  readerAvatar    String   @db.Text
+  bookTitle       String
+  bookSynopsis    String   @db.Text
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("book_drafts")
+}
+
+model Book {
+  id              String   @id @default(uuid())
+  bookDraftId     String?  // Reference to the draft that created it (nullable for future books created directly)
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  authorId        String
+  author          Author    @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  selectedGenreId String?
+  title           String
+  synopsis        String   @db.Text
+  chapters        Int
+  wordCountTotal  Int
+  readingGrade    String
+  subgenre        String
+  microtopic      String
+  readerAvatar    String   @db.Text
+  status          String   // "generating", "completed", "failed"
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  generationJob  BookGenerationJob?
+  bookChapters   BookChapter[]
+
+  @@map("books")
+}
+
+model BookGenerationJob {
+  id              String      @id @default(uuid())
+  bookId          String      @unique
+  book            Book        @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  model           String?     // Model ID for generation (e.g., "openai/gpt-4o-mini")
+  status          String      // "pending", "processing", "completed", "failed"
+  currentChapter  Int         @default(0)
+  totalChapters   Int
+  errorMessage    String?    @db.Text
+  startedAt       DateTime?
+  completedAt     DateTime?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@map("book_generation_jobs")
+}
+
+model BookChapter {
+  id              String      @id @default(uuid())
+  bookId          String
+  book            Book        @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  chapterNumber   Int
+  content         String      @db.Text
+  summary         String      @db.Text
+  wordCount       Int
+  status          String      // "pending", "generating", "completed", "failed"
+  errorMessage    String?     @db.Text
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@unique([bookId, chapterNumber])
+  @@map("book_chapters")
 }
