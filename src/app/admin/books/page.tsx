@@ -298,7 +298,9 @@ export default function BooksPage() {
                     ) : (
                       drafts.map((draft) => (
                         <TableRow key={draft.id}>
-                          <TableCell>{draft.bookTitle || "Untitled"}</TableCell>
+                          <TableCell className="whitespace-break-spaces">
+                            {draft.bookTitle || "Untitled"}
+                          </TableCell>
                           <TableCell>{draft.author.name}</TableCell>
                           <TableCell>{draft.user.name}</TableCell>
                           <TableCell>

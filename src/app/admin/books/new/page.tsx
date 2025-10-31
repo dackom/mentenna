@@ -513,7 +513,7 @@ export default function GenerateBooksPage() {
                       <Label htmlFor="book-title">Chapters - {chapters}</Label>
                       <Slider
                         id="chapters"
-                        min={5}
+                        min={1}
                         max={60}
                         step={1}
                         value={[chapters]}
