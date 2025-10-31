@@ -5,18 +5,15 @@ nixPkgs = [
 
 [phases.install]
 cmds = [
-  # Copy prisma schema into worker directory so it's available during install
-  # This is needed because when Root Directory is set to /worker, parent isn't copied
-  # Try to copy from parent directory (available during git clone but before Docker COPY)
-  "if [ -d ../prisma ]; then cp -r ../prisma . && echo 'Prisma schema copied from parent'; elif [ -d ../../prisma ]; then cp -r ../../prisma . && echo 'Prisma schema copied from repo root'; else echo 'Warning: ../prisma not found in expected location'; fi",
+  # When base directory is /, we can access ../prisma from worker directory
   # Install worker dependencies (includes Prisma in devDependencies)
+  # Note: Custom install command in Coolify will run: cd worker && npm install
   "npm install",
-  # Generate Prisma client using the copied schema or from parent if available
-  "if [ -f ./prisma/schema.prisma ]; then npx prisma generate --schema=./prisma/schema.prisma && echo 'Prisma client generated from ./prisma'; elif [ -f ../prisma/schema.prisma ]; then npx prisma generate --schema=../prisma/schema.prisma && echo 'Prisma client generated from ../prisma'; else echo 'Error: Prisma schema not found. Tried ./prisma/schema.prisma and ../prisma/schema.prisma'; exit 1; fi",
 ]
 
 [phases.build]
-cmds = []
-
-[start]
-cmd = "npm run start"
+cmds = [
+  # Generate Prisma client - schema is at ../prisma/schema.prisma from worker directory
+  # This runs after install phase, and custom commands handle install/start
+  "npx prisma generate --schema=../prisma/schema.prisma",
+]

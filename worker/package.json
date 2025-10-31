@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "generate": "npx prisma generate --schema=./prisma/schema.prisma || npx prisma generate --schema=../prisma/schema.prisma || (echo 'Prisma schema not found' && exit 1)",
+    "generate": "npx prisma generate --schema=../prisma/schema.prisma",
     "dev": "npm run generate && tsx watch src/index.ts",
     "start": "npm run generate && tsx src/index.ts"
   },
